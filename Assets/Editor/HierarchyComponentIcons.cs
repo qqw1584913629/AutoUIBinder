@@ -191,16 +191,7 @@ namespace UITool
                     
                     if (isShowComponentIconsBase)
                     {
-                        // 检查是否是预制体的根节点
-                        var stage = PrefabStageUtility.GetCurrentPrefabStage();
-                        if (stage != null && stage.prefabContentsRoot == comp.gameObject)
-                        {
-                            // 如果是根节点的ShowComponentIconsBase，消费事件后返回
-                            current.Use();
-                            return;
-                        }
-
-                        // 如果不是根节点，从父级开始查找
+                        // 对于ShowComponentIconsBase，只从父级查找handler
                         var parent = comp.gameObject.transform.parent;
                         while (parent != null)
                         {
@@ -231,77 +222,44 @@ namespace UITool
                     {
                         string key = GetNodeComponentKey(comp);
                         
-                        // 切换组件的高亮状态
-                        if (highlightedComponents.ContainsKey(componentID))
-                        {
-                            bool referenceRemoved = false;
-                            
-                            // 查找当前组件实际被哪个ShowComponentIconsBase引用
-                            var stage = PrefabStageUtility.GetCurrentPrefabStage();
-                            if (stage != null && stage.prefabContentsRoot != null)
-                            {
-                                var allHandlers = stage.prefabContentsRoot.GetComponentsInChildren<ShowComponentIconsBase>(true);
-                                
-                                // 查找实际引用该组件的ShowComponentIconsBase
-                                foreach (var handler in allHandlers)
-                                {
-                                    if (handler.ComponentRefs != null && 
-                                        handler.ComponentRefs.ContainsKey(key) && 
-                                        handler.ComponentRefs[key] == comp)
-                                    {
-                                        // 允许所有组件解绑
-                                        handler.RemoveComponentRef(key);
-                                        EditorUtility.SetDirty(handler.gameObject);
-                                        referenceRemoved = true;
-                                        if (comp is ShowComponentIconsBase)
-                                        {
-                                            Debug.Log($"[UITool] 从父级handler {handler.gameObject.name} 移除ShowComponentIconsBase引用: {key}");
-                                        }
-                                        else
-                                        {
-                                            Debug.Log($"[UITool] 从handler {handler.gameObject.name} 移除引用: {key}");
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            // 无论是否找到并移除了引用，都要移除高亮状态
-                            highlightedComponents.Remove(componentID);
-                            Debug.Log($"[UITool] 移除组件高亮状态: {comp.gameObject.name}.{comp.GetType().Name}");
-                            
-                            // 如果没有找到引用但存在当前handler，也尝试从当前handler移除
-                            if (!referenceRemoved && iconHandler != null)
+                    if (highlightedComponents.ContainsKey(componentID))
+                    {
+                            // 直接从当前handler移除引用
+                            if (iconHandler != null)
                             {
                                 iconHandler.RemoveComponentRef(key);
                                 EditorUtility.SetDirty(iconHandler.gameObject);
-                                Debug.Log($"[UITool] 从handler {iconHandler.gameObject.name} 移除引用: {key}");
                             }
+                            // 移除高亮状态
+                            highlightedComponents.Remove(componentID);
                         }
                         else
                         {
-                            // 如果是ShowComponentIconsBase组件，需要特殊处理
+                            // 如果是ShowComponentIconsBase组件，只允许绑定到父级，且不能绑定自己
                             if (comp is ShowComponentIconsBase)
                             {
-                                // 查找父级的handler
-                                ShowComponentIconsBase parentHandler = null;
-                                var parent = comp.gameObject.transform.parent;
+                                if (iconHandler.gameObject == comp.gameObject)
+                                {
+                                    // 不能绑定到自己
+                                    current.Use();
+                                    return;
+                                }
+
+                                // 检查是否是父级关系
+                                Transform parent = comp.gameObject.transform.parent;
+                                bool isParent = false;
                                 while (parent != null)
                                 {
-                                    parentHandler = parent.GetComponent<ShowComponentIconsBase>();
-                                    if (parentHandler != null)
+                                    if (parent.gameObject == iconHandler.gameObject)
+                                    {
+                                        isParent = true;
                                         break;
+                                    }
                                     parent = parent.parent;
                                 }
 
-                                // 如果找到了父级handler，使用它而不是当前的handler
-                                if (parentHandler != null)
+                                if (!isParent)
                                 {
-                                    iconHandler = parentHandler;
-                                }
-                                else if (iconHandler.gameObject == comp.gameObject)
-                                {
-                                    // 如果没有父级handler且尝试绑定到自己，则拒绝
-                                    Debug.Log($"[UITool] ShowComponentIconsBase不能绑定到自己的handler: {comp.gameObject.name}");
                                     current.Use();
                                     return;
                                 }
@@ -316,7 +274,6 @@ namespace UITool
                                     kvp.Value.gameObject.name == comp.gameObject.name) // 名字相同
                                 {
                                     hasNameConflict = true;
-                                    Debug.Log($"[UITool] 检测到节点名称冲突: {comp.gameObject.name} 与 {kvp.Value.gameObject.name} ({kvp.Value.GetType().Name})");
                                     break;
                                 }
                             }
@@ -325,7 +282,6 @@ namespace UITool
                             if (hasNameConflict)
                             {
                                 string uniqueName = GetUniqueNodeName(iconHandler, comp.gameObject.name);
-                                Debug.Log($"[UITool] 由于名称冲突，重命名为: {uniqueName}");
                                 comp.gameObject.name = uniqueName;
                                 key = GetNodeComponentKey(comp);
                             }
@@ -336,7 +292,6 @@ namespace UITool
                             // 添加新引用
                             highlightedComponents[componentID] = true;
                             iconHandler.AddComponentRef(key, comp);
-                            Debug.Log($"[UITool] 添加组件引用: {key} 到handler: {iconHandler.gameObject.name}");
                         }
 
                         // 标记为已修改
@@ -357,7 +312,6 @@ namespace UITool
             // 构建完整路径
             string fullPath = GetFullPath(component.gameObject);
             string key = $"{fullPath}_{component.GetType().Name}";
-            Debug.Log($"[UITool] 生成新的key: {key} for {component.gameObject.name}");
             return key;
         }
 
@@ -451,13 +405,11 @@ namespace UITool
             {
                 if (Event.current == null)
                 {
-                    Debug.LogWarning("[UITool] HierarchyWindowItemOnGUI: Event.current is null");
                     return;
                 }
 
                 if (selectionRect.width <= 0 || selectionRect.height <= 0)
                 {
-                    Debug.LogWarning($"[UITool] HierarchyWindowItemOnGUI: Invalid selectionRect - Width: {selectionRect.width}, Height: {selectionRect.height}, Position: ({selectionRect.x}, {selectionRect.y})");
                     return;
                 }
 
@@ -470,7 +422,6 @@ namespace UITool
                 {
                     if (oldName != gameObject.name)
                     {
-                        Debug.Log($"[UITool] 检测到重命名: {oldName} -> {gameObject.name}");
                         HandleObjectRename(gameObject, oldName);
                         gameObjectNames[instanceID] = gameObject.name;
                     }
@@ -685,11 +636,9 @@ namespace UITool
             var stage = PrefabStageUtility.GetCurrentPrefabStage();
             if (stage == null || stage.prefabContentsRoot == null) return;
 
-            Debug.Log("[UITool] OnHierarchyChanged 被触发");
 
             // 获取所有ShowComponentIconsBase组件
             var allHandlers = stage.prefabContentsRoot.GetComponentsInChildren<ShowComponentIconsBase>(true);
-            Debug.Log($"[UITool] 找到 {allHandlers.Length} 个ShowComponentIconsBase组件");
             
             // 检查所有高亮组件
             var highlightedToRemove = new List<int>();
@@ -718,18 +667,46 @@ namespace UITool
 
                 if (nearestHandler != null)
                 {
-                    // 检查该组件是否在最近handler的引用列表中
                     string key = GetNodeComponentKey(comp);
-                    if (!nearestHandler.ComponentRefs.ContainsKey(key))
+                    
+                    // 区分ShowComponentIconsBase和普通组件的处理
+                    if (comp is ShowComponentIconsBase)
                     {
-                        highlightedToRemove.Add(kvp.Key);
-                        Debug.Log($"[UITool] 组件 {comp.gameObject.name} 不在最近handler的引用列表中，移除高亮");
+                        // 对于ShowComponentIconsBase，检查是否在父级handler的引用列表中
+                        Transform parent = comp.gameObject.transform.parent;
+                        bool foundInParentHandler = false;
+                        
+                        while (parent != null)
+                        {
+                            var parentHandler = parent.GetComponent<ShowComponentIconsBase>();
+                            if (parentHandler != null)
+                            {
+                                if (parentHandler.ComponentRefs.ContainsKey(key) && parentHandler.ComponentRefs[key] == comp)
+                                {
+                                    foundInParentHandler = true;
+                                }
+                                break; // 找到第一个父级handler就停止
+                            }
+                            parent = parent.parent;
+                        }
+                        
+                        if (!foundInParentHandler)
+                        {
+                            highlightedToRemove.Add(kvp.Key);
+                        }
+                    }
+                    else
+                    {
+                        // 对于普通组件，检查是否在最近handler的引用列表中
+                        if (!nearestHandler.ComponentRefs.ContainsKey(key))
+                        {
+                            highlightedToRemove.Add(kvp.Key);
+                        }
                     }
                 }
                 else
                 {
                     highlightedToRemove.Add(kvp.Key);
-                    Debug.Log($"[UITool] 组件 {comp.gameObject.name} 没有找到有效的handler，移除高亮");
                 }
             }
 
@@ -737,7 +714,6 @@ namespace UITool
             foreach (var id in highlightedToRemove)
             {
                 highlightedComponents.Remove(id);
-                Debug.Log($"[UITool] 移除组件ID {id} 的高亮状态");
             }
             
             foreach (var handler in allHandlers)
@@ -823,7 +799,6 @@ namespace UITool
         {
             if (prefabRoot == null) return;
             
-            Debug.Log($"[UITool] 开始清理孤儿组件，当前高亮组件数量: {highlightedComponents.Count}");
             
             var componentsToUnhighlight = new List<int>();
             
@@ -833,41 +808,33 @@ namespace UITool
                 int componentID = kvp.Key;
                 Component comp = EditorUtility.InstanceIDToObject(componentID) as Component;
                 
-                Debug.Log($"[UITool] 检查组件ID {componentID}: {(comp != null ? $"{comp.gameObject.name}.{comp.GetType().Name}" : "null")}");
                 
                 // 如果组件已被删除，直接移除高亮状态
                 if (comp == null)
                 {
                     componentsToUnhighlight.Add(componentID);
-                    Debug.Log($"[UITool] 组件已删除，标记移除高亮状态: {componentID}");
                     continue;
                 }
                 
                 // 检查该组件是否还有有效的父级ShowComponentIconsBase
                 ShowComponentIconsBase iconHandler = FindIconHandler(comp);
-                Debug.Log($"[UITool] 组件 {comp.gameObject.name}.{comp.GetType().Name} 的iconHandler: {(iconHandler != null ? iconHandler.gameObject.name : "null")}");
                 
                 if (iconHandler == null)
                 {
                     // 没有找到父级ShowComponentIconsBase，移除高亮状态
                     componentsToUnhighlight.Add(componentID);
-                    Debug.Log($"[UITool] 清理孤儿组件高亮状态: {comp.gameObject.name}.{comp.GetType().Name}");
                 }
             }
-            
-            Debug.Log($"[UITool] 需要移除高亮状态的组件数量: {componentsToUnhighlight.Count}");
             
             // 移除孤儿组件的高亮状态
             foreach (var componentID in componentsToUnhighlight)
             {
                 highlightedComponents.Remove(componentID);
-                Debug.Log($"[UITool] 已移除组件 {componentID} 的高亮状态");
             }
             
             // 如果有组件被清理，刷新界面
             if (componentsToUnhighlight.Count > 0)
             {
-                Debug.Log($"[UITool] 清理完成，刷新界面");
                 RequestRepaint();
             }
         }
@@ -927,8 +894,6 @@ namespace UITool
                 
                 Color color = Color.HSVToRGB(hue, saturation, value);
                 handlerColors[handlerID] = color;
-                
-                Debug.Log($"[UITool] 为 '{handler.gameObject.name}' 生成颜色: {color} (Key: {uniqueKey})");
             }
             
             return handlerColors[handlerID];
@@ -1017,8 +982,6 @@ namespace UITool
             var stage = PrefabStageUtility.GetCurrentPrefabStage();
             if (stage == null || stage.prefabContentsRoot == null) return;
 
-            Debug.Log($"[UITool] 处理节点重命名: {oldName} -> {renamedObject.name}");
-
             // 获取对象上的所有组件
             var components = renamedObject.GetComponents<Component>();
             foreach (var component in components)
@@ -1041,8 +1004,6 @@ namespace UITool
 
                 if (nearestHandler != null)
                 {
-                    Debug.Log($"[UITool] 找到handler: {nearestHandler.gameObject.name}");
-
                     // 首先检查是否有节点名称冲突（不考虑组件类型）
                     bool hasNameConflict = false;
                     foreach (var kvp in nearestHandler.ComponentRefs)
@@ -1052,7 +1013,6 @@ namespace UITool
                             kvp.Value.gameObject.name == renamedObject.name) // 名字相同
                         {
                             hasNameConflict = true;
-                            Debug.Log($"[UITool] 检测到节点名称冲突: {renamedObject.name} 与 {kvp.Value.gameObject.name} ({kvp.Value.GetType().Name})");
                             break;
                         }
                     }
@@ -1061,26 +1021,19 @@ namespace UITool
                     if (hasNameConflict)
                     {
                         string uniqueName = GetUniqueNodeName(nearestHandler, renamedObject.name);
-                        Debug.Log($"[UITool] 由于名称冲突，重命名为: {uniqueName}");
                         renamedObject.name = uniqueName;
                     }
                     
                     // 构造旧的key和新的key
                     string oldKey = $"{oldName.Replace(" ", "_")}_{component.GetType().Name}";
                     string newKey = GetNodeComponentKey(component);
-                    
-                    Debug.Log($"[UITool] 尝试更新引用: {oldKey} -> {newKey}");
-
                     // 检查是否存在旧引用
                     if (nearestHandler.ComponentRefs.ContainsKey(oldKey))
                     {
                         var oldComponent = nearestHandler.ComponentRefs[oldKey];
                         if (oldComponent == component)
                         {
-                            Debug.Log($"[UITool] 移除旧引用: {oldKey}");
                             nearestHandler.RemoveComponentRef(oldKey);
-
-                            Debug.Log($"[UITool] 添加新引用: {newKey}");
                             nearestHandler.AddComponentRef(newKey, component);
 
                             // 确保高亮状态保持
@@ -1088,7 +1041,6 @@ namespace UITool
                             highlightedComponents[componentId] = true;
 
                             EditorUtility.SetDirty(nearestHandler.gameObject);
-                            Debug.Log($"[UITool] 完成节点引用更新");
                         }
                     }
                 }

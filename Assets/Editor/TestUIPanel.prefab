@@ -339,7 +339,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   componentRefs:
-    pairs: []
+    pairs:
+    - Key: Text_Title_1_1_Text
+      Value: {fileID: 7808087776205992549}
+    - Key: Text_Title_1_1/Text_Title_1_(2)_Text
+      Value: {fileID: 8352919171871991836}
+    - Key: Text_Title_1_1_CanvasRenderer
+      Value: {fileID: 3589118424077959247}
+    - Key: Text_Title_ExampleUIPanel
+      Value: {fileID: 0}
   panelTitle: "\u793A\u4F8B\u9762\u677F"
 --- !u!223 &2172029229009825095
 Canvas:
