@@ -593,6 +593,55 @@ public class HierarchyComponentIcons
         var allHandlers = stage.prefabContentsRoot.GetComponentsInChildren<ShowComponentIconsBase>(true);
         Debug.Log($"[UITool] 找到 {allHandlers.Length} 个ShowComponentIconsBase组件");
         
+        // 检查所有高亮组件
+        var highlightedToRemove = new List<int>();
+        foreach (var kvp in highlightedComponents)
+        {
+            Component comp = EditorUtility.InstanceIDToObject(kvp.Key) as Component;
+            if (comp == null)
+            {
+                highlightedToRemove.Add(kvp.Key);
+                continue;
+            }
+
+            // 找到最近的ShowComponentIconsBase父级
+            ShowComponentIconsBase nearestHandler = null;
+            Transform current = comp.transform;
+            while (current != null)
+            {
+                var handler = current.GetComponent<ShowComponentIconsBase>();
+                if (handler != null)
+                {
+                    nearestHandler = handler;
+                    break;
+                }
+                current = current.parent;
+            }
+
+            if (nearestHandler != null)
+            {
+                // 检查该组件是否在最近handler的引用列表中
+                string key = GetNodeComponentKey(comp);
+                if (!nearestHandler.ComponentRefs.ContainsKey(key))
+                {
+                    highlightedToRemove.Add(kvp.Key);
+                    Debug.Log($"[UITool] 组件 {comp.gameObject.name} 不在最近handler的引用列表中，移除高亮");
+                }
+            }
+            else
+            {
+                highlightedToRemove.Add(kvp.Key);
+                Debug.Log($"[UITool] 组件 {comp.gameObject.name} 没有找到有效的handler，移除高亮");
+            }
+        }
+
+        // 移除无效的高亮状态
+        foreach (var id in highlightedToRemove)
+        {
+            highlightedComponents.Remove(id);
+            Debug.Log($"[UITool] 移除组件ID {id} 的高亮状态");
+        }
+        
         foreach (var handler in allHandlers)
         {
             ValidateComponentReferences(handler);
@@ -600,6 +649,12 @@ public class HierarchyComponentIcons
         
         // 清理孤儿组件（失去父级ShowComponentIconsBase的组件）
         CleanupOrphanComponents(stage.prefabContentsRoot);
+        
+        // 如果有任何清理操作，刷新界面
+        if (highlightedToRemove.Count > 0)
+        {
+            RequestRepaint();
+        }
     }
 
     private static void ValidateComponentReferences(ShowComponentIconsBase handler)
