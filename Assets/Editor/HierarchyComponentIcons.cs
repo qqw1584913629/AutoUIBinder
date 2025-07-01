@@ -17,6 +17,9 @@ public class HierarchyComponentIcons
     // 用于存储每个ShowComponentIconsBase的唯一颜色
     private static Dictionary<int, Color> handlerColors = new Dictionary<int, Color>();
     
+    // 用于存储GameObject的名称，用于检测重命名
+    private static Dictionary<int, string> gameObjectNames = new Dictionary<int, string>();
+    
     // 性能优化：控制重绘频率
     private static bool needsRepaint = false;
     private static double lastRepaintTime = 0;
@@ -51,6 +54,9 @@ public class HierarchyComponentIcons
         
         // 清理颜色缓存
         CleanupHandlerColors();
+
+        // 清理名称缓存
+        gameObjectNames.Clear();
 
         // 获取当前打开的预制体
         var stage = PrefabStageUtility.GetCurrentPrefabStage();
@@ -90,6 +96,9 @@ public class HierarchyComponentIcons
         
         // 清理颜色缓存
         CleanupHandlerColors();
+        
+        // 清理名称缓存
+        gameObjectNames.Clear();
 
         // 获取预制体的根对象
         GameObject prefabRoot = stage.prefabContentsRoot;
@@ -119,6 +128,9 @@ public class HierarchyComponentIcons
     private static void OnPrefabStageClosing(PrefabStage stage)
     {
         if (stage == null || stage.prefabContentsRoot == null) return;
+
+        // 清理名称缓存
+        gameObjectNames.Clear();
 
         // 获取当前预制体中的所有组件
         var allComponents = stage.prefabContentsRoot.GetComponentsInChildren<Component>(true);
@@ -254,7 +266,9 @@ public class HierarchyComponentIcons
                             // 查找实际引用该组件的ShowComponentIconsBase
                             foreach (var handler in allHandlers)
                             {
-                                if (handler.ComponentRefs != null && handler.ComponentRefs.ContainsKey(key))
+                                if (handler.ComponentRefs != null && 
+                                    handler.ComponentRefs.ContainsKey(key) && 
+                                    handler.ComponentRefs[key] == comp)
                                 {
                                     handler.RemoveComponentRef(key);
                                     EditorUtility.SetDirty(handler.gameObject);
@@ -275,32 +289,36 @@ public class HierarchyComponentIcons
                     }
                     else
                     {
+                        // 在添加新引用前，检查节点名称冲突
+                        bool hasNameConflict = false;
+                        foreach (var kvp in iconHandler.ComponentRefs)
+                        {
+                            if (kvp.Value != null && 
+                                kvp.Value.gameObject != comp.gameObject && // 不是自己
+                                kvp.Value.gameObject.name == comp.gameObject.name) // 名字相同
+                            {
+                                hasNameConflict = true;
+                                Debug.Log($"[UITool] 检测到节点名称冲突: {comp.gameObject.name} 与 {kvp.Value.gameObject.name} ({kvp.Value.GetType().Name})");
+                                break;
+                            }
+                        }
+
+                        // 如果有名称冲突，生成新的唯一名称
+                        if (hasNameConflict)
+                        {
+                            string uniqueName = GetUniqueNodeName(iconHandler, comp.gameObject.name);
+                            Debug.Log($"[UITool] 由于名称冲突，重命名为: {uniqueName}");
+                            comp.gameObject.name = uniqueName;
+                            key = GetNodeComponentKey(comp);
+                        }
+
                         // 在添加新引用前，清理其他ShowComponentIconsBase中的引用
                         CleanupExistingReference(comp, iconHandler);
 
-                        // 智能处理命名冲突
-                        if (iconHandler.ComponentRefs.ContainsKey(key))
-                        {
-                            // 生成新的节点名称和键名
-                            string originalNodeName = comp.gameObject.name;
-                            string newNodeName = GetUniqueNodeName(iconHandler, originalNodeName);
-                            string newKey = $"{newNodeName.Replace(" ", "_")}_{comp.GetType().Name}";
-                            
-                            // 直接重命名GameObject
-                            comp.gameObject.name = newNodeName;
-                            
-                            highlightedComponents[componentID] = true;
-                            iconHandler.AddComponentRef(newKey, comp);
-                            
-                            Debug.Log($"[UITool] 自动重命名节点: '{originalNodeName}' -> '{newNodeName}' (Key: {newKey})");
-                        }
-                        else
-                        {
-                            // 没有冲突，直接添加
-                            highlightedComponents[componentID] = true;
-                            iconHandler.AddComponentRef(key, comp);
-                            Debug.Log($"[UITool] 添加组件引用: {key}");
-                        }
+                        // 添加新引用
+                        highlightedComponents[componentID] = true;
+                        iconHandler.AddComponentRef(key, comp);
+                        Debug.Log($"[UITool] 添加组件引用: {key}");
                     }
 
                     // 标记为已修改
@@ -317,8 +335,33 @@ public class HierarchyComponentIcons
     private static string GetNodeComponentKey(Component component)
     {
         if (component == null) return "";
-        string nodeName = component.gameObject.name.Replace(" ", "_");
-        return $"{nodeName}_{component.GetType().Name}";
+        
+        // 构建完整路径
+        string fullPath = GetFullPath(component.gameObject);
+        string key = $"{fullPath}_{component.GetType().Name}";
+        Debug.Log($"[UITool] 生成新的key: {key} for {component.gameObject.name}");
+        return key;
+    }
+
+    private static string GetFullPath(GameObject obj)
+    {
+        if (obj == null) return "";
+        
+        var path = new System.Text.StringBuilder(obj.name);
+        var current = obj.transform.parent;
+        
+        // 向上遍历直到找到ShowComponentIconsBase或到达根节点
+        while (current != null)
+        {
+            // 如果找到ShowComponentIconsBase，停止
+            if (current.GetComponent<ShowComponentIconsBase>() != null)
+                break;
+                
+            path.Insert(0, current.name + "/");
+            current = current.parent;
+        }
+        
+        return path.ToString().Replace(" ", "_");
     }
 
     private static void OnEditorUpdate()
@@ -403,6 +446,21 @@ public class HierarchyComponentIcons
             GameObject gameObject = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
             if (gameObject == null)
                 return;
+
+            // 检测重命名
+            if (gameObjectNames.TryGetValue(instanceID, out string oldName))
+            {
+                if (oldName != gameObject.name)
+                {
+                    Debug.Log($"[UITool] 检测到重命名: {oldName} -> {gameObject.name}");
+                    HandleObjectRename(gameObject, oldName);
+                    gameObjectNames[instanceID] = gameObject.name;
+                }
+            }
+            else
+            {
+                gameObjectNames[instanceID] = gameObject.name;
+            }
 
             // 检查该GameObject是否应该显示图标
             if (!ShouldShowIcons(gameObject))
@@ -503,7 +561,18 @@ public class HierarchyComponentIcons
             if (iconHandler != null)
             {
                 string key = GetNodeComponentKey(component);
-                bool isReferenced = iconHandler.ComponentRefs.ContainsKey(key);
+                bool isReferenced = false;
+
+                // 检查是否在当前handler中被引用
+                if (iconHandler.ComponentRefs.ContainsKey(key))
+                {
+                    var referencedComponent = iconHandler.ComponentRefs[key];
+                    // 确保引用的是同一个组件
+                    if (referencedComponent == component)
+                    {
+                        isReferenced = true;
+                    }
+                }
                 
                 // 获取handler的专属颜色
                 Color handlerColor = GetHandlerColor(iconHandler);
@@ -531,26 +600,37 @@ public class HierarchyComponentIcons
                 }
                 else if (highlightedComponents.ContainsKey(component.GetInstanceID()))
                 {
-                    // 如果是高亮状态但未绑定，显示黄色边框
-                    Color originalColor = GUI.color;
-                    GUI.color = new Color(1f, 1f, 0f, 0.5f);
-                    EditorGUI.DrawRect(new Rect(rect.x - 1, rect.y - 1, rect.width + 2, rect.height + 2), GUI.color);
-                    GUI.color = originalColor;
-                }
-                else
-                {
-                    // 即使没有被引用，也显示潜在的handler颜色指示器（半透明）
-                    float indicatorSize = 3f;
-                    Rect indicatorRect = new Rect(
-                        rect.x + rect.width - indicatorSize, 
-                        rect.y + rect.height - indicatorSize, 
-                        indicatorSize, 
-                        indicatorSize
-                    );
-                    
-                    // 绘制半透明的颜色指示器
-                    Color dimmedColor = new Color(handlerColor.r, handlerColor.g, handlerColor.b, 0.3f);
-                    EditorGUI.DrawRect(indicatorRect, dimmedColor);
+                    // 检查是否是真正需要高亮的组件
+                    bool shouldHighlight = false;
+
+                    // 检查是否在任何handler中被引用
+                    var stage = PrefabStageUtility.GetCurrentPrefabStage();
+                    if (stage != null && stage.prefabContentsRoot != null)
+                    {
+                        var allHandlers = stage.prefabContentsRoot.GetComponentsInChildren<ShowComponentIconsBase>(true);
+                        foreach (var handler in allHandlers)
+                        {
+                            if (handler.ComponentRefs.ContainsKey(key) && handler.ComponentRefs[key] == component)
+                            {
+                                shouldHighlight = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!shouldHighlight)
+                    {
+                        // 如果不应该高亮，移除高亮状态
+                        highlightedComponents.Remove(component.GetInstanceID());
+                    }
+                    else
+                    {
+                        // 如果是高亮状态但未绑定，显示黄色边框
+                        Color originalColor = GUI.color;
+                        GUI.color = new Color(1f, 1f, 0f, 0.5f);
+                        EditorGUI.DrawRect(new Rect(rect.x - 1, rect.y - 1, rect.width + 2, rect.height + 2), GUI.color);
+                        GUI.color = originalColor;
+                    }
                 }
             }
         }
@@ -778,23 +858,23 @@ public class HierarchyComponentIcons
     // 获取唯一的节点名称
     private static string GetUniqueNodeName(ShowComponentIconsBase handler, string originalName)
     {
-        if (handler == null || string.IsNullOrEmpty(originalName)) return "";
+        if (handler == null || string.IsNullOrEmpty(originalName)) return originalName;
         
-        // 检查原名称是否与现有的节点名称冲突
-        var existingNodeNames = new HashSet<string>();
+        // 收集所有已使用的节点名称
+        var usedNames = new HashSet<string>();
         foreach (var kvp in handler.ComponentRefs)
         {
             if (kvp.Value != null)
             {
-                existingNodeNames.Add(kvp.Value.gameObject.name);
+                usedNames.Add(kvp.Value.gameObject.name);
             }
         }
         
-        // 如果原名称没有冲突，直接返回
-        if (!existingNodeNames.Contains(originalName))
+        // 如果原名称没有被使用，直接返回
+        if (!usedNames.Contains(originalName))
             return originalName;
         
-        // 如果冲突，尝试添加数字后缀
+        // 如果名称已被使用，生成新的名称
         int counter = 1;
         string uniqueName;
         do
@@ -802,7 +882,7 @@ public class HierarchyComponentIcons
             uniqueName = $"{originalName}_{counter}";
             counter++;
         } 
-        while (existingNodeNames.Contains(uniqueName) && counter < 100); // 防止无限循环
+        while (usedNames.Contains(uniqueName) && counter < 100); // 防止无限循环
         
         return uniqueName;
     }
@@ -912,6 +992,91 @@ public class HierarchyComponentIcons
         {
             handlerColors.Remove(key);
         }
+    }
+
+    private static void HandleObjectRename(GameObject renamedObject, string oldName)
+    {
+        var stage = PrefabStageUtility.GetCurrentPrefabStage();
+        if (stage == null || stage.prefabContentsRoot == null) return;
+
+        Debug.Log($"[UITool] 处理节点重命名: {oldName} -> {renamedObject.name}");
+
+        // 获取对象上的所有组件
+        var components = renamedObject.GetComponents<Component>();
+        foreach (var component in components)
+        {
+            if (component == null) continue;
+
+            // 找到最近的ShowComponentIconsBase父级
+            ShowComponentIconsBase nearestHandler = null;
+            Transform current = component.transform;
+            while (current != null)
+            {
+                var handler = current.GetComponent<ShowComponentIconsBase>();
+                if (handler != null)
+                {
+                    nearestHandler = handler;
+                    break;
+                }
+                current = current.parent;
+            }
+
+            if (nearestHandler != null)
+            {
+                Debug.Log($"[UITool] 找到handler: {nearestHandler.gameObject.name}");
+
+                // 首先检查是否有节点名称冲突（不考虑组件类型）
+                bool hasNameConflict = false;
+                foreach (var kvp in nearestHandler.ComponentRefs)
+                {
+                    if (kvp.Value != null && 
+                        kvp.Value.gameObject != renamedObject && // 不是自己
+                        kvp.Value.gameObject.name == renamedObject.name) // 名字相同
+                    {
+                        hasNameConflict = true;
+                        Debug.Log($"[UITool] 检测到节点名称冲突: {renamedObject.name} 与 {kvp.Value.gameObject.name} ({kvp.Value.GetType().Name})");
+                        break;
+                    }
+                }
+
+                // 如果有名称冲突，生成新的唯一名称
+                if (hasNameConflict)
+                {
+                    string uniqueName = GetUniqueNodeName(nearestHandler, renamedObject.name);
+                    Debug.Log($"[UITool] 由于名称冲突，重命名为: {uniqueName}");
+                    renamedObject.name = uniqueName;
+                }
+                
+                // 构造旧的key和新的key
+                string oldKey = $"{oldName.Replace(" ", "_")}_{component.GetType().Name}";
+                string newKey = GetNodeComponentKey(component);
+                
+                Debug.Log($"[UITool] 尝试更新引用: {oldKey} -> {newKey}");
+
+                // 检查是否存在旧引用
+                if (nearestHandler.ComponentRefs.ContainsKey(oldKey))
+                {
+                    var oldComponent = nearestHandler.ComponentRefs[oldKey];
+                    if (oldComponent == component)
+                    {
+                        Debug.Log($"[UITool] 移除旧引用: {oldKey}");
+                        nearestHandler.RemoveComponentRef(oldKey);
+
+                        Debug.Log($"[UITool] 添加新引用: {newKey}");
+                        nearestHandler.AddComponentRef(newKey, component);
+
+                        // 确保高亮状态保持
+                        int componentId = component.GetInstanceID();
+                        highlightedComponents[componentId] = true;
+
+                        EditorUtility.SetDirty(nearestHandler.gameObject);
+                        Debug.Log($"[UITool] 完成节点引用更新");
+                    }
+                }
+            }
+        }
+
+        RequestRepaint();
     }
 }
 } 
