@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4299061661101781109}
   - component: {fileID: 3242380489844304906}
   m_Layer: 0
-  m_Name: Text_Title_1 (1)
+  m_Name: Text_Title_1_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -340,12 +340,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   componentRefs:
     pairs:
-    - Key: Text_Title_1_1_Text
-      Value: {fileID: 7808087776205992549}
-    - Key: Text_Title_1_1/Text_Title_1_(2)_Text
-      Value: {fileID: 8352919171871991836}
     - Key: Text_Title_1_1_CanvasRenderer
-      Value: {fileID: 3589118424077959247}
+      Value: {fileID: 4299061661101781109}
+    - Key: Text_Title_1_1_1_Text
+      Value: {fileID: 7808087776205992549}
+    - Key: Text_Title_1_1_Text
+      Value: {fileID: 3242380489844304906}
+    - Key: Text_Title_1_2_Text
+      Value: {fileID: 8352919171871991836}
+    - Key: Text_Title_1_1_2_Text
+      Value: {fileID: 9144594717022453159}
   panelTitle: "\u793A\u4F8B\u9762\u677F"
 --- !u!223 &2172029229009825095
 Canvas:
@@ -421,7 +425,7 @@ GameObject:
   - component: {fileID: 3589118424077959247}
   - component: {fileID: 7808087776205992549}
   m_Layer: 0
-  m_Name: Text_Title_1_1
+  m_Name: Text_Title_1_1_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -502,7 +506,7 @@ GameObject:
   - component: {fileID: 4980835339179200205}
   - component: {fileID: 8352919171871991836}
   m_Layer: 0
-  m_Name: Text_Title_1 (2)
+  m_Name: Text_Title_1_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -582,7 +586,7 @@ GameObject:
   - component: {fileID: 3689435115261812559}
   - component: {fileID: 9144594717022453159}
   m_Layer: 0
-  m_Name: Text_Title_1
+  m_Name: Text_Title_1_1_2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

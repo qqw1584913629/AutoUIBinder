@@ -183,6 +183,15 @@ namespace UITool
                 Component comp = EditorUtility.InstanceIDToObject(componentID) as Component;
                 if (comp != null)
                 {
+                    // 检查节点名称是否包含括号，如果包含则自动重命名
+                    if (comp.gameObject.name.Contains("(") || comp.gameObject.name.Contains(")"))
+                    {
+                        string oldName = comp.gameObject.name;
+                        string newName = oldName.Replace(" ", "_").Replace("(", "").Replace(")", "");
+                        comp.gameObject.name = newName;
+                        HandleObjectRename(comp.gameObject, oldName);
+                    }
+
                     // 检查当前组件是否是ShowComponentIconsBase
                     bool isShowComponentIconsBase = comp is ShowComponentIconsBase;
                     
@@ -309,9 +318,16 @@ namespace UITool
         {
             if (component == null) return "";
             
-            // 构建完整路径
-            string fullPath = GetFullPath(component.gameObject);
-            string key = $"{fullPath}_{component.GetType().Name}";
+            // 直接使用节点名字
+            string nodeName = component.gameObject.name;
+            
+            // 替换空格为下划线
+            nodeName = nodeName.Replace(" ", "_");
+            
+            // 组合key: 节点名_组件类型
+            string componentType = component.GetType().Name;
+            string key = $"{nodeName}_{componentType}";
+            
             return key;
         }
 
