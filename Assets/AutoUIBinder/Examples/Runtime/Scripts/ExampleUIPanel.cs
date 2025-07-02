@@ -4,7 +4,7 @@ using UnityEngine.UI;
 /// <summary>
 /// UITool使用示例 - 展示基本的UI面板实现
 /// </summary>
-public partial class ExampleUIPanel : ShowComponentIconsBase
+public partial class ExampleUIPanel : AutoUIBinderBase
 {
     [Header("示例配置")]
     [SerializeField] private string panelTitle = "示例面板";

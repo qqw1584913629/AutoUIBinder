@@ -23,7 +23,7 @@ UITool是一个强大的Unity编辑器扩展工具，旨在简化UI开发流程�
    ```csharp
    using UnityEngine;
    
-   public class MyUIPanel : ShowComponentIconsBase
+   public class MyUIPanel : AutoUIBinderBase
    {
        void Start()
        {
@@ -63,7 +63,7 @@ Assets/
 │   ├── ShowComponentIconsEditor.cs     # 自定义Inspector
 │   └── SerializableDictionaryDrawer.cs # 字典绘制器
 ├── Scripts/                   # 基础脚本
-│   ├── ShowComponentIconsBase.cs       # 抽象基类
+│   ├── AutoUIBinderBase.cs       # 抽象基类
 │   ├── SerializableDictionary.cs       # 可序列化字典
 │   └── DictionaryDisplayNameAttribute.cs # 显示特性
 └── Resources/                 # 资源文件
@@ -91,7 +91,7 @@ Assets/
 
 ### Hierarchy窗口增强
 
-- **背景色高亮** - 不同类型的ShowComponentIconsBase用不同颜色区分
+- **背景色高亮** - 不同类型的AutoUIBinderBase用不同颜色区分
 - **组件图标** - 显示所有组件的图标
 - **绑定状态** - 已绑定的组件会有特殊标识
 - **智能交互** - 点击图标进行绑定/解绑操作
@@ -133,7 +133,7 @@ Assets/
 A: 检查GlobalConfig中的路径设置，确保目录存在且有写入权限
 
 **Q: 预制体编辑模式下看不到图标**
-A: 确保预制体根对象或其子对象有ShowComponentIconsBase组件
+A: 确保预制体根对象或其子对象有AutoUIBinderBase组件
 
 **Q: 绑定的组件在代码中访问为null**
 A: 确保预制体已保存，并且生成代码后重新编译了项目

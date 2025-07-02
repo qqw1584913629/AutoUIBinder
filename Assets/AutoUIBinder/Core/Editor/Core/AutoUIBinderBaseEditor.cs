@@ -7,8 +7,8 @@ using System.Collections.Generic;
 using UnityEditor.SceneManagement;
 using UITool;
 
-[CustomEditor(typeof(ShowComponentIconsBase), true)]
-public class ShowComponentIconsEditor : Editor
+[CustomEditor(typeof(AutoUIBinderBase), true)]
+public class AutoUIBinderBaseEditor : Editor
 {
     private bool showInfoFoldout = true;  // 添加折叠状态变量
     
@@ -35,8 +35,8 @@ public class ShowComponentIconsEditor : Editor
     
     private void DrawInfoSection()
     {
-        var showComponentBase = target as ShowComponentIconsBase;
-        if (showComponentBase == null) return;
+        var autoUIBinderBase = target as AutoUIBinderBase;
+        if (autoUIBinderBase == null) return;
         
         // 折叠标题样式
         var foldoutStyle = new GUIStyle(EditorStyles.foldout);
@@ -61,7 +61,7 @@ public class ShowComponentIconsEditor : Editor
             valueStyle.normal.textColor = EditorGUIUtility.isProSkin ? new Color(0.8f, 0.8f, 0.8f) : new Color(0.2f, 0.2f, 0.2f);
             
             // 组件信息
-            int componentCount = showComponentBase.ComponentRefs.Count;
+            int componentCount = autoUIBinderBase.ComponentRefs.Count;
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("已绑定组件", labelStyle, GUILayout.Width(120));
             EditorGUILayout.LabelField($"{componentCount} 个", valueStyle);
@@ -142,8 +142,15 @@ public class ShowComponentIconsEditor : Editor
     
     private void DrawActionButtons()
     {
-        var showComponentBase = target as ShowComponentIconsBase;
-        if (showComponentBase == null) return;
+        var autoUIBinderBase = target as AutoUIBinderBase;
+        if (autoUIBinderBase == null) return;
+        
+        // 检查是否在预制体模式
+        var stage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+        bool inPrefabMode = stage != null;
+        
+        // 如果不在预制体模式，不显示按钮
+        if (!inPrefabMode) return;
         
         EditorGUILayout.BeginVertical();
         
@@ -189,10 +196,17 @@ public class ShowComponentIconsEditor : Editor
     
     private void DrawStatusInfo()
     {
-        var showComponentBase = target as ShowComponentIconsBase;
-        if (showComponentBase == null) return;
+        var autoUIBinderBase = target as AutoUIBinderBase;
+        if (autoUIBinderBase == null) return;
         
-        if (showComponentBase.ComponentRefs.Count == 0)
+        // 检查是否在预制体模式
+        var stage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+        bool inPrefabMode = stage != null;
+        
+        if (!inPrefabMode)
+            return;
+        
+        if (autoUIBinderBase.ComponentRefs.Count == 0)
         {
             EditorGUILayout.HelpBox(
                 "📝 使用指南:在预制体编辑模式下，点击Hierarchy窗口中的组件图标来绑定组件。", 
@@ -202,7 +216,7 @@ public class ShowComponentIconsEditor : Editor
         else
         {
             EditorGUILayout.HelpBox(
-                $"✨ 已绑定 {showComponentBase.ComponentRefs.Count} 个组件，点击'生成UI代码'按钮来生成代码。", 
+                $"✨ 已绑定 {autoUIBinderBase.ComponentRefs.Count} 个组件，点击'生成UI代码'按钮来生成代码。", 
                 MessageType.None
             );
         }
@@ -263,42 +277,42 @@ public class ShowComponentIconsEditor : Editor
                 return;
             }
 
-        // 构建生成文件的路径
-        string genFolderPath = Path.Combine(globalConfig.Paths, "Gen");
-        string classGenFolderPath = Path.Combine(genFolderPath, className);
-        string genFilePath = Path.Combine(classGenFolderPath, $"{className}Gen.cs");
-        string absoluteGenFolderPath = Path.Combine(Application.dataPath, "..", genFolderPath);
-        string absoluteClassGenFolderPath = Path.Combine(Application.dataPath, "..", classGenFolderPath);
-        string absoluteFilePath = Path.Combine(Application.dataPath, "..", genFilePath);
+            // 构建生成文件的路径
+            string genFolderPath = Path.Combine(globalConfig.Paths, "Gen");
+            string classGenFolderPath = Path.Combine(genFolderPath, className);
+            string genFilePath = Path.Combine(classGenFolderPath, $"{className}Gen.cs");
+            string absoluteGenFolderPath = Path.Combine(Application.dataPath, "..", genFolderPath);
+            string absoluteClassGenFolderPath = Path.Combine(Application.dataPath, "..", classGenFolderPath);
+            string absoluteFilePath = Path.Combine(Application.dataPath, "..", genFilePath);
 
-        // 获取当前预制体中的所有组件
-        var showComponentBase = target as ShowComponentIconsBase;
-        if (showComponentBase == null) return;
+            // 获取当前预制体中的所有组件
+            var autoUIBinderBase = target as AutoUIBinderBase;
+            if (autoUIBinderBase == null) return;
 
-        var componentRefs = showComponentBase.ComponentRefs;
-        
-        // 生成代码
-        StringBuilder codeBuilder = new StringBuilder();
-        codeBuilder.AppendLine("//------------------------------------------------------------------------------");
-        codeBuilder.AppendLine("// <auto-generated>");
-        codeBuilder.AppendLine("//     此代码由工具自动生成。");
-        codeBuilder.AppendLine("//     运行时版本:" + UnityEngine.Application.unityVersion);
-        codeBuilder.AppendLine($"//     生成时间: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-        codeBuilder.AppendLine($"//     组件数量: {componentRefs.Count}");
-        codeBuilder.AppendLine($"//     预制体路径: {AssetDatabase.GetAssetPath(PrefabStageUtility.GetCurrentPrefabStage()?.prefabContentsRoot)}");
-        codeBuilder.AppendLine($"//     脚本路径: {AssetDatabase.GetAssetPath(MonoScript.FromMonoBehaviour(target as MonoBehaviour))}");
-        codeBuilder.AppendLine($"//     生成路径: {genFilePath}");
-        codeBuilder.AppendLine("//");
-        codeBuilder.AppendLine("//     对此文件的更改可能会导致不正确的行为，并且如果");
-        codeBuilder.AppendLine("//     重新生成代码，这些更改将会丢失。");
-        codeBuilder.AppendLine("// </auto-generated>");
-        codeBuilder.AppendLine("//------------------------------------------------------------------------------");
-        codeBuilder.AppendLine();
-        codeBuilder.AppendLine("using UnityEngine;");
-        codeBuilder.AppendLine("using UnityEngine.UI;");
-        codeBuilder.AppendLine();
-        codeBuilder.AppendLine($"public partial class {className}");
-        codeBuilder.AppendLine("{");
+            var componentRefs = autoUIBinderBase.ComponentRefs;
+            
+            // 生成代码
+            StringBuilder codeBuilder = new StringBuilder();
+            codeBuilder.AppendLine("//------------------------------------------------------------------------------");
+            codeBuilder.AppendLine("// <auto-generated>");
+            codeBuilder.AppendLine("//     此代码由工具自动生成。");
+            codeBuilder.AppendLine("//     运行时版本:" + UnityEngine.Application.unityVersion);
+            codeBuilder.AppendLine($"//     生成时间: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            codeBuilder.AppendLine($"//     组件数量: {componentRefs.Count}");
+            codeBuilder.AppendLine($"//     预制体路径: {AssetDatabase.GetAssetPath(PrefabStageUtility.GetCurrentPrefabStage()?.prefabContentsRoot)}");
+            codeBuilder.AppendLine($"//     脚本路径: {AssetDatabase.GetAssetPath(MonoScript.FromMonoBehaviour(target as MonoBehaviour))}");
+            codeBuilder.AppendLine($"//     生成路径: {genFilePath}");
+            codeBuilder.AppendLine("//");
+            codeBuilder.AppendLine("//     对此文件的更改可能会导致不正确的行为，并且如果");
+            codeBuilder.AppendLine("//     重新生成代码，这些更改将会丢失。");
+            codeBuilder.AppendLine("// </auto-generated>");
+            codeBuilder.AppendLine("//------------------------------------------------------------------------------");
+            codeBuilder.AppendLine();
+            codeBuilder.AppendLine("using UnityEngine;");
+            codeBuilder.AppendLine("using UnityEngine.UI;");
+            codeBuilder.AppendLine();
+            codeBuilder.AppendLine($"public partial class {className}");
+            codeBuilder.AppendLine("{");
 
             // 检查是否有组件引用
             if (componentRefs.Count == 0)
@@ -471,10 +485,10 @@ public class ShowComponentIconsEditor : Editor
 
     private void ClearAllBindings()
     {
-        var showComponentBase = target as ShowComponentIconsBase;
-        if (showComponentBase == null) return;
+        var autoUIBinderBase = target as AutoUIBinderBase;
+        if (autoUIBinderBase == null) return;
         
-        showComponentBase.ComponentRefs.Clear();
+        autoUIBinderBase.ComponentRefs.Clear();
         EditorUtility.SetDirty(target);
         
         Debug.Log("[UITool] 已清空所有组件绑定");
@@ -488,14 +502,14 @@ public class ShowComponentIconsEditor : Editor
     
     private void ValidateBindings(bool isManualCall = true)
     {
-        var showComponentBase = target as ShowComponentIconsBase;
-        if (showComponentBase == null) return;
+        var autoUIBinderBase = target as AutoUIBinderBase;
+        if (autoUIBinderBase == null) return;
         
         int validCount = 0;
         int invalidCount = 0;
         var invalidKeys = new System.Collections.Generic.List<string>();
         
-        foreach (var kvp in showComponentBase.ComponentRefs)
+        foreach (var kvp in autoUIBinderBase.ComponentRefs)
         {
             if (kvp.Value == null)
             {
@@ -515,7 +529,7 @@ public class ShowComponentIconsEditor : Editor
             // 直接清理无效绑定
             foreach (var key in invalidKeys)
             {
-                showComponentBase.RemoveComponentRef(key);
+                autoUIBinderBase.RemoveComponentRef(key);
             }
             EditorUtility.SetDirty(target);
             

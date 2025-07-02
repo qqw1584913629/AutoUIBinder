@@ -4,7 +4,7 @@ using System.Collections.Generic;
 /// <summary>
 /// 抽象基类：继承此类的GameObject及其子对象将在Hierarchy窗口中显示组件图标
 /// </summary>
-public abstract class ShowComponentIconsBase : MonoBehaviour
+public abstract class AutoUIBinderBase : MonoBehaviour
 {
     // 用于存储组件引用的字典
     [SerializeField]

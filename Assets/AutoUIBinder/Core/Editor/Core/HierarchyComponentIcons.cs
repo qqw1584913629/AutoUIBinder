@@ -14,7 +14,7 @@ namespace UITool
         // 用于存储组件的高亮状态
         private static Dictionary<int, bool> highlightedComponents = new Dictionary<int, bool>();
         
-        // 用于存储每个ShowComponentIconsBase的唯一颜色
+        // 用于存储每个AutoUIBinderBase的唯一颜色
         private static Dictionary<int, Color> handlerColors = new Dictionary<int, Color>();
         
         // 用于存储GameObject的名称，用于检测重命名
@@ -66,8 +66,8 @@ namespace UITool
                 GameObject prefabRoot = stage.prefabContentsRoot;
                 if (prefabRoot != null)
                 {
-                    // 查找所有ShowComponentIconsBase组件
-                    var iconHandlers = prefabRoot.GetComponentsInChildren<ShowComponentIconsBase>(true);
+                    // 查找所有AutoUIBinderBase组件
+                    var iconHandlers = prefabRoot.GetComponentsInChildren<AutoUIBinderBase>(true);
                     foreach (var handler in iconHandlers)
                     {
                         if (handler == null || handler.ComponentRefs == null) continue;
@@ -104,8 +104,8 @@ namespace UITool
             GameObject prefabRoot = stage.prefabContentsRoot;
             if (prefabRoot == null) return;
 
-            // 查找所有ShowComponentIconsBase组件
-            var iconHandlers = prefabRoot.GetComponentsInChildren<ShowComponentIconsBase>(true);
+            // 查找所有AutoUIBinderBase组件
+            var iconHandlers = prefabRoot.GetComponentsInChildren<AutoUIBinderBase>(true);
             foreach (var handler in iconHandlers)
             {
                 if (handler == null || handler.ComponentRefs == null) continue;
@@ -161,7 +161,7 @@ namespace UITool
                 Component comp = EditorUtility.InstanceIDToObject(componentID) as Component;
                 if (comp != null)
                 {
-                    ShowComponentIconsBase iconHandler = FindIconHandler(comp);
+                    AutoUIBinderBase iconHandler = FindIconHandler(comp);
                     if (iconHandler != null)
                     {
                         string tooltipText = $"组件: {comp.GetType().Name}\n属于: {iconHandler.gameObject.name}";
@@ -192,19 +192,19 @@ namespace UITool
                         HandleObjectRename(comp.gameObject, oldName);
                     }
 
-                    // 检查当前组件是否是ShowComponentIconsBase
-                    bool isShowComponentIconsBase = comp is ShowComponentIconsBase;
+                    // 检查当前组件是否是AutoUIBinderBase
+                    bool isAutoUIBinderBase = comp is AutoUIBinderBase;
                     
-                    // 从组件所在的GameObject开始向上查找ShowComponentIconsBase
-                    ShowComponentIconsBase iconHandler = null;
+                    // 从组件所在的GameObject开始向上查找AutoUIBinderBase
+                    AutoUIBinderBase iconHandler = null;
                     
-                    if (isShowComponentIconsBase)
+                    if (isAutoUIBinderBase)
                     {
-                        // 对于ShowComponentIconsBase，只从父级查找handler
+                        // 对于AutoUIBinderBase，只从父级查找handler
                         var parent = comp.gameObject.transform.parent;
                         while (parent != null)
                         {
-                            iconHandler = parent.GetComponent<ShowComponentIconsBase>();
+                            iconHandler = parent.GetComponent<AutoUIBinderBase>();
                             if (iconHandler != null)
                                 break;
                             parent = parent.parent;
@@ -212,14 +212,14 @@ namespace UITool
                     }
                     else
                     {
-                        // 如果不是ShowComponentIconsBase，先查找自身，然后查找最近的父级
-                        iconHandler = comp.gameObject.GetComponent<ShowComponentIconsBase>();
+                        // 如果不是AutoUIBinderBase，先查找自身，然后查找最近的父级
+                        iconHandler = comp.gameObject.GetComponent<AutoUIBinderBase>();
                         if (iconHandler == null)
                         {
                             var parent = comp.gameObject.transform.parent;
                             while (parent != null)
                             {
-                                iconHandler = parent.GetComponent<ShowComponentIconsBase>();
+                                iconHandler = parent.GetComponent<AutoUIBinderBase>();
                                 if (iconHandler != null)
                                     break;
                                 parent = parent.parent;
@@ -244,8 +244,8 @@ namespace UITool
                         }
                         else
                         {
-                            // 如果是ShowComponentIconsBase组件，只允许绑定到父级，且不能绑定自己
-                            if (comp is ShowComponentIconsBase)
+                            // 如果是AutoUIBinderBase组件，只允许绑定到父级，且不能绑定自己
+                            if (comp is AutoUIBinderBase)
                             {
                                 if (iconHandler.gameObject == comp.gameObject)
                                 {
@@ -295,7 +295,7 @@ namespace UITool
                                 key = GetNodeComponentKey(comp);
                             }
 
-                            // 在添加新引用前，清理其他ShowComponentIconsBase中的引用
+                            // 在添加新引用前，清理其他AutoUIBinderBase中的引用
                             CleanupExistingReference(comp, iconHandler);
 
                             // 添加新引用
@@ -338,11 +338,11 @@ namespace UITool
             var path = new System.Text.StringBuilder(obj.name);
             var current = obj.transform.parent;
             
-            // 向上遍历直到找到ShowComponentIconsBase或到达根节点
+            // 向上遍历直到找到AutoUIBinderBase或到达根节点
             while (current != null)
             {
-                // 如果找到ShowComponentIconsBase，停止
-                if (current.GetComponent<ShowComponentIconsBase>() != null)
+                // 如果找到AutoUIBinderBase，停止
+                if (current.GetComponent<AutoUIBinderBase>() != null)
                     break;
                     
                 path.Insert(0, current.name + "/");
@@ -404,11 +404,11 @@ namespace UITool
                 return false;  // 不在预制体编辑模式中
             }
 
-            // 检查自身或任意父级对象是否继承了ShowComponentIconsBase
+            // 检查自身或任意父级对象是否继承了AutoUIBinderBase
             Transform current = gameObject.transform;
             while (current != null)
             {
-                if (current.GetComponent<ShowComponentIconsBase>() != null)
+                if (current.GetComponent<AutoUIBinderBase>() != null)
                     return true;
                 current = current.parent;
             }
@@ -451,10 +451,10 @@ namespace UITool
                 if (!ShouldShowIcons(gameObject))
                     return;
 
-                // 检查是否有ShowComponentIconsBase组件（用于判断是否显示图标）
-                var baseComponent = gameObject.GetComponent<ShowComponentIconsBase>();
+                // 检查是否有AutoUIBinderBase组件（用于判断是否显示图标）
+                var baseComponent = gameObject.GetComponent<AutoUIBinderBase>();
                 
-                // 如果当前节点有ShowComponentIconsBase组件，绘制背景色标识
+                // 如果当前节点有AutoUIBinderBase组件，绘制背景色标识
                 if (baseComponent != null)
                 {
                     Color handlerColor = GetHandlerColor(baseComponent);
@@ -499,15 +499,15 @@ namespace UITool
                     // 检查是否需要处理鼠标事件
                     HandleMouseEvents(iconRect, componentID, gameObject);
 
-                    // 如果组件被高亮，使用其关联的ShowComponentIconsBase的颜色绘制高亮背景
+                    // 如果组件被高亮，使用其关联的AutoUIBinderBase的颜色绘制高亮背景
                     if (highlightedComponents.ContainsKey(componentID) && highlightedComponents[componentID])
                     {
-                        // 查找该组件关联的ShowComponentIconsBase
-                        ShowComponentIconsBase handler = null;
+                        // 查找该组件关联的AutoUIBinderBase
+                        AutoUIBinderBase handler = null;
                         Transform current = component.transform;
                         while (current != null)
                         {
-                            handler = current.GetComponent<ShowComponentIconsBase>();
+                            handler = current.GetComponent<AutoUIBinderBase>();
                             if (handler != null)
                                 break;
                             current = current.parent;
@@ -536,13 +536,13 @@ namespace UITool
             GUIContent content = EditorGUIUtility.ObjectContent(component, component.GetType());
             if (content.image != null)
             {
-                // 获取该组件关联的ShowComponentIconsBase
-                ShowComponentIconsBase iconHandler = FindIconHandler(component);
+                // 获取该组件关联的AutoUIBinderBase
+                AutoUIBinderBase iconHandler = FindIconHandler(component);
 
                 // 绘制组件图标
                 GUI.DrawTexture(rect, content.image);
 
-                // 如果找到了ShowComponentIconsBase，绘制层级指示器
+                // 如果找到了AutoUIBinderBase，绘制层级指示器
                 if (iconHandler != null)
                 {
                     string key = GetNodeComponentKey(component);
@@ -592,7 +592,7 @@ namespace UITool
                         var stage = PrefabStageUtility.GetCurrentPrefabStage();
                         if (stage != null && stage.prefabContentsRoot != null)
                         {
-                            var allHandlers = stage.prefabContentsRoot.GetComponentsInChildren<ShowComponentIconsBase>(true);
+                            var allHandlers = stage.prefabContentsRoot.GetComponentsInChildren<AutoUIBinderBase>(true);
                             foreach (var handler in allHandlers)
                             {
                                 if (handler.ComponentRefs.ContainsKey(key) && handler.ComponentRefs[key] == component)
@@ -620,8 +620,8 @@ namespace UITool
                 }
             }
         }
-        // 添加新方法：清理其他ShowComponentIconsBase中的引用
-        private static void CleanupExistingReference(Component comp, ShowComponentIconsBase currentHandler)
+        // 添加新方法：清理其他AutoUIBinderBase中的引用
+        private static void CleanupExistingReference(Component comp, AutoUIBinderBase currentHandler)
         {
             if (comp == null || currentHandler == null) return;
 
@@ -629,8 +629,8 @@ namespace UITool
             var stage = PrefabStageUtility.GetCurrentPrefabStage();
             if (stage == null || stage.prefabContentsRoot == null) return;
 
-            // 查找所有ShowComponentIconsBase
-            var allHandlers = stage.prefabContentsRoot.GetComponentsInChildren<ShowComponentIconsBase>(true);
+            // 查找所有AutoUIBinderBase
+            var allHandlers = stage.prefabContentsRoot.GetComponentsInChildren<AutoUIBinderBase>(true);
             string key = GetNodeComponentKey(comp);
 
             foreach (var handler in allHandlers)
@@ -653,8 +653,8 @@ namespace UITool
             if (stage == null || stage.prefabContentsRoot == null) return;
 
 
-            // 获取所有ShowComponentIconsBase组件
-            var allHandlers = stage.prefabContentsRoot.GetComponentsInChildren<ShowComponentIconsBase>(true);
+            // 获取所有AutoUIBinderBase组件
+            var allHandlers = stage.prefabContentsRoot.GetComponentsInChildren<AutoUIBinderBase>(true);
             
             // 检查所有高亮组件
             var highlightedToRemove = new List<int>();
@@ -667,12 +667,12 @@ namespace UITool
                     continue;
                 }
 
-                // 找到最近的ShowComponentIconsBase父级
-                ShowComponentIconsBase nearestHandler = null;
+                // 找到最近的AutoUIBinderBase父级
+                AutoUIBinderBase nearestHandler = null;
                 Transform current = comp.transform;
                 while (current != null)
                 {
-                    var handler = current.GetComponent<ShowComponentIconsBase>();
+                    var handler = current.GetComponent<AutoUIBinderBase>();
                     if (handler != null)
                     {
                         nearestHandler = handler;
@@ -685,16 +685,16 @@ namespace UITool
                 {
                     string key = GetNodeComponentKey(comp);
                     
-                    // 区分ShowComponentIconsBase和普通组件的处理
-                    if (comp is ShowComponentIconsBase)
+                    // 区分AutoUIBinderBase和普通组件的处理
+                    if (comp is AutoUIBinderBase)
                     {
-                        // 对于ShowComponentIconsBase，检查是否在父级handler的引用列表中
+                        // 对于AutoUIBinderBase，检查是否在父级handler的引用列表中
                         Transform parent = comp.gameObject.transform.parent;
                         bool foundInParentHandler = false;
                         
                         while (parent != null)
                         {
-                            var parentHandler = parent.GetComponent<ShowComponentIconsBase>();
+                            var parentHandler = parent.GetComponent<AutoUIBinderBase>();
                             if (parentHandler != null)
                             {
                                 if (parentHandler.ComponentRefs.ContainsKey(key) && parentHandler.ComponentRefs[key] == comp)
@@ -737,7 +737,7 @@ namespace UITool
                 ValidateComponentReferences(handler);
             }
             
-            // 清理孤儿组件（失去父级ShowComponentIconsBase的组件）
+            // 清理孤儿组件（失去父级AutoUIBinderBase的组件）
             CleanupOrphanComponents(stage.prefabContentsRoot);
             
             // 如果有任何清理操作，刷新界面
@@ -747,7 +747,7 @@ namespace UITool
             }
         }
 
-        private static void ValidateComponentReferences(ShowComponentIconsBase handler)
+        private static void ValidateComponentReferences(AutoUIBinderBase handler)
         {
             if (handler == null || handler.ComponentRefs == null) return;
 
@@ -759,17 +759,17 @@ namespace UITool
                 var component = kvp.Value;
                 if (component == null) continue;
 
-                // 如果引用的是ShowComponentIconsBase组件，则允许保留
-                if (component is ShowComponentIconsBase)
+                // 如果引用的是AutoUIBinderBase组件，则允许保留
+                if (component is AutoUIBinderBase)
                     continue;
 
-                // 检查组件所在的GameObject是否有更近的ShowComponentIconsBase
+                // 检查组件所在的GameObject是否有更近的AutoUIBinderBase
                 Transform current = component.transform;
                 bool shouldRemove = false;
 
                 while (current != null && current != handler.transform)
                 {
-                    if (current.GetComponent<ShowComponentIconsBase>() != null)
+                    if (current.GetComponent<AutoUIBinderBase>() != null)
                     {
                         shouldRemove = true;
                         break;
@@ -810,7 +810,7 @@ namespace UITool
             }
         }
         
-        // 清理孤儿组件（失去父级ShowComponentIconsBase的组件）
+        // 清理孤儿组件（失去父级AutoUIBinderBase的组件）
         private static void CleanupOrphanComponents(GameObject prefabRoot)
         {
             if (prefabRoot == null) return;
@@ -832,12 +832,12 @@ namespace UITool
                     continue;
                 }
                 
-                // 检查该组件是否还有有效的父级ShowComponentIconsBase
-                ShowComponentIconsBase iconHandler = FindIconHandler(comp);
+                // 检查该组件是否还有有效的父级AutoUIBinderBase
+                AutoUIBinderBase iconHandler = FindIconHandler(comp);
                 
                 if (iconHandler == null)
                 {
-                    // 没有找到父级ShowComponentIconsBase，移除高亮状态
+                    // 没有找到父级AutoUIBinderBase，移除高亮状态
                     componentsToUnhighlight.Add(componentID);
                 }
             }
@@ -857,7 +857,7 @@ namespace UITool
 
         
         // 获取唯一的节点名称
-        private static string GetUniqueNodeName(ShowComponentIconsBase handler, string originalName)
+        private static string GetUniqueNodeName(AutoUIBinderBase handler, string originalName)
         {
             if (handler == null || string.IsNullOrEmpty(originalName)) return originalName;
             
@@ -888,8 +888,8 @@ namespace UITool
             return uniqueName;
         }
         
-        // 为ShowComponentIconsBase生成唯一颜色
-        private static Color GetHandlerColor(ShowComponentIconsBase handler)
+        // 为AutoUIBinderBase生成唯一颜色
+        private static Color GetHandlerColor(AutoUIBinderBase handler)
         {
             if (handler == null) return Color.white;
             
@@ -916,7 +916,7 @@ namespace UITool
         }
         
         // 生成handler的唯一标识符
-        private static string GetHandlerUniqueKey(ShowComponentIconsBase handler)
+        private static string GetHandlerUniqueKey(AutoUIBinderBase handler)
         {
             if (handler == null) return "";
             
@@ -932,23 +932,23 @@ namespace UITool
             return path + handler.GetType().Name;
         }
         
-        // 查找组件对应的ShowComponentIconsBase
-        private static ShowComponentIconsBase FindIconHandler(Component component)
+        // 查找组件对应的AutoUIBinderBase
+        private static AutoUIBinderBase FindIconHandler(Component component)
         {
             if (component == null) return null;
             
-            ShowComponentIconsBase iconHandler = null;
+            AutoUIBinderBase iconHandler = null;
             
-            // 检查当前组件是否是ShowComponentIconsBase
-            bool isShowComponentIconsBase = component is ShowComponentIconsBase;
-            
-            if (isShowComponentIconsBase)
+            // 检查当前组件是否是AutoUIBinderBase
+            bool isAutoUIBinderBase = component is AutoUIBinderBase;
+
+            if (isAutoUIBinderBase)
             {
-                // 如果是ShowComponentIconsBase，查找最近的父级ShowComponentIconsBase
+                // 如果是AutoUIBinderBase，查找最近的父级AutoUIBinderBase
                 var parent = component.gameObject.transform.parent;
                 while (parent != null)
                 {
-                    iconHandler = parent.GetComponent<ShowComponentIconsBase>();
+                    iconHandler = parent.GetComponent<AutoUIBinderBase>();
                     if (iconHandler != null)
                         break;
                     parent = parent.parent;
@@ -956,14 +956,14 @@ namespace UITool
             }
             else
             {
-                // 如果不是ShowComponentIconsBase，先查找自身，然后查找最近的父级
-                iconHandler = component.gameObject.GetComponent<ShowComponentIconsBase>();
+                // 如果不是AutoUIBinderBase，先查找自身，然后查找最近的父级
+                iconHandler = component.gameObject.GetComponent<AutoUIBinderBase>();
                 if (iconHandler == null)
                 {
                     var parent = component.transform.parent;
                     while (parent != null)
                     {
-                        iconHandler = parent.GetComponent<ShowComponentIconsBase>();
+                        iconHandler = parent.GetComponent<AutoUIBinderBase>();
                         if (iconHandler != null)
                             break;
                         parent = parent.parent;
@@ -980,7 +980,7 @@ namespace UITool
             var keysToRemove = new List<int>();
             foreach (var kvp in handlerColors)
             {
-                var handler = EditorUtility.InstanceIDToObject(kvp.Key) as ShowComponentIconsBase;
+                var handler = EditorUtility.InstanceIDToObject(kvp.Key) as AutoUIBinderBase;
                 if (handler == null)
                 {
                     keysToRemove.Add(kvp.Key);
@@ -1004,12 +1004,12 @@ namespace UITool
             {
                 if (component == null) continue;
 
-                // 找到最近的ShowComponentIconsBase父级
-                ShowComponentIconsBase nearestHandler = null;
+                // 找到最近的AutoUIBinderBase父级
+                AutoUIBinderBase nearestHandler = null;
                 Transform current = component.transform;
                 while (current != null)
                 {
-                    var handler = current.GetComponent<ShowComponentIconsBase>();
+                    var handler = current.GetComponent<AutoUIBinderBase>();
                     if (handler != null)
                     {
                         nearestHandler = handler;
