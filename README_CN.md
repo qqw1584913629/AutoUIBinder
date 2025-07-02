@@ -1,8 +1,12 @@
-# UITool - Unity UI开发工具
+<h1 align="center">✨ AutoUIBinder</h1>
+<p align="center">
+    <a href="README.md">English</a> •
+    <a href="README_CN.md">中文</a>
+</p>
 
-[English](README.md) | [中文](README_CN.md)
+---
 
-UITool是一个强大的Unity编辑器扩展工具，旨在简化UI开发流程，提供可视化的组件绑定和自动代码生成功能。
+AutoUIBinder是一个强大的Unity编辑器扩展工具，旨在简化UI开发流程，提供可视化的组件绑定和自动代码生成功能。
 
 ## ✨ 主要功能
 
@@ -50,7 +54,7 @@ UITool是一个强大的Unity编辑器扩展工具，旨在简化UI开发流程�
    {
        // 自动生成的属性可以直接使用
        Button_Start.onClick.AddListener(OnStartClick);
-       Text_Title.text = "欢迎使用UITool";
+       Text_Title.text = "欢迎使用AutoUIBinder";
    }
    ```
 
@@ -152,7 +156,7 @@ A: 工具已优化性能，如仍有问题，请检查是否有其他插件冲�
 
 ### 调试信息
 
-工具提供详细的日志信息，所有日志都以`[UITool]`前缀标识：
+工具提供详细的日志信息，所有日志都以`[AutoUIBinder]`前缀标识：
 
 - **Info级别** - 正常操作记录
 - **Warning级别** - 潜在问题提醒  
@@ -193,4 +197,4 @@ Scripts/
 
 ---
 
-**UITool** - 让Unity UI开发更高效！ 
+**AutoUIBinder** - 让Unity UI开发更高效！ 

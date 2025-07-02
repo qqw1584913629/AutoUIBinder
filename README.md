@@ -1,8 +1,12 @@
-# UITool - Unity UI Development Tool
+<h1 align="center">✨ AutoUIBinder</h1>
+<p align="center">
+    <a href="README.md">English</a> •
+    <a href="README_CN.md">中文</a>
+</p>
 
-[English](README.md) | [中文](README_CN.md)
+---
 
-UITool is a powerful Unity editor extension designed to simplify UI development workflow, providing visual component binding and automatic code generation capabilities.
+AutoUIBinder is a powerful Unity editor extension designed to simplify UI development workflow, providing visual component binding and automatic code generation capabilities.
 
 ## ✨ Features
 
@@ -50,7 +54,7 @@ UITool is a powerful Unity editor extension designed to simplify UI development 
    {
        // Auto-generated properties can be used directly
        Button_Start.onClick.AddListener(OnStartClick);
-       Text_Title.text = "Welcome to UITool";
+       Text_Title.text = "Welcome to AutoUIBinder";
    }
    ```
 
@@ -152,7 +156,7 @@ A: Tool is optimized for performance, check for plugin conflicts if issues persi
 
 ### Debug Information
 
-Tool provides detailed logs with `[UITool]` prefix:
+Tool provides detailed logs with `[AutoUIBinder]` prefix:
 
 - **Info Level** - Normal operation records
 - **Warning Level** - Potential issue alerts
@@ -193,4 +197,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**UITool** - Make Unity UI development more efficient!
+**AutoUIBinder** - Make Unity UI development more efficient!
