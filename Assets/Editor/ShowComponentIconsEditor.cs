@@ -10,6 +10,8 @@ using UITool;
 [CustomEditor(typeof(ShowComponentIconsBase), true)]
 public class ShowComponentIconsEditor : Editor
 {
+    private bool showInfoFoldout = true;  // 添加折叠状态变量
+    
     public override void OnInspectorGUI()
     {
         // 首先绘制默认的Inspector内容
@@ -36,33 +38,106 @@ public class ShowComponentIconsEditor : Editor
         var showComponentBase = target as ShowComponentIconsBase;
         if (showComponentBase == null) return;
         
-        EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+        // 折叠标题样式
+        var foldoutStyle = new GUIStyle(EditorStyles.foldout);
+        foldoutStyle.fontSize = 12;
+        foldoutStyle.fontStyle = FontStyle.Bold;
         
-        // 标题
-        EditorGUILayout.LabelField("🛠️ UITool 信息", EditorStyles.boldLabel);
+        // 使用EditorGUILayout.Foldout来创建可折叠的标题
+        showInfoFoldout = EditorGUILayout.Foldout(showInfoFoldout, "数据信息", true, foldoutStyle);
         
-        EditorGUILayout.Space(5);
-        
-        // 组件数量信息
-        int componentCount = showComponentBase.ComponentRefs.Count;
-        EditorGUILayout.LabelField($"📁 已绑定组件: {componentCount} 个");
-        
-        // 类名信息
-        string className = target.GetType().Name;
-        EditorGUILayout.LabelField($"🏷️ 类名: {className}");
-        
-        // 预制体状态
-        var stage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
-        bool inPrefabMode = stage != null;
-        string prefabStatus = inPrefabMode ? "✅ 预制体编辑模式" : "❌ 非预制体模式";
-        EditorGUILayout.LabelField($"🎨 状态: {prefabStatus}");
-        
-        if (!inPrefabMode)
+        if (showInfoFoldout)
         {
-            EditorGUILayout.HelpBox("请进入预制体编辑模式来使用组件绑定功能", MessageType.Info);
+            // 信息区域
+            var infoAreaStyle = new GUIStyle(EditorStyles.helpBox);
+            infoAreaStyle.padding = new RectOffset(10, 10, 8, 8);
+            EditorGUILayout.BeginVertical(infoAreaStyle);
+            
+            // 使用表格式布局显示信息
+            var labelStyle = new GUIStyle(EditorStyles.label);
+            labelStyle.fontSize = 12;
+            var valueStyle = new GUIStyle(EditorStyles.label);
+            valueStyle.fontSize = 12;
+            valueStyle.normal.textColor = EditorGUIUtility.isProSkin ? new Color(0.8f, 0.8f, 0.8f) : new Color(0.2f, 0.2f, 0.2f);
+            
+            // 组件信息
+            int componentCount = showComponentBase.ComponentRefs.Count;
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("已绑定组件", labelStyle, GUILayout.Width(120));
+            EditorGUILayout.LabelField($"{componentCount} 个", valueStyle);
+            EditorGUILayout.EndHorizontal();
+            
+            // 类名信息
+            string className = target.GetType().Name;
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("类名", labelStyle, GUILayout.Width(120));
+            EditorGUILayout.LabelField(className, valueStyle);
+            EditorGUILayout.EndHorizontal();
+            
+            // 预制体状态
+            var stage = UnityEditor.SceneManagement.PrefabStageUtility.GetCurrentPrefabStage();
+            bool inPrefabMode = stage != null;
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("预制体状态", labelStyle, GUILayout.Width(120));
+            var statusStyle = new GUIStyle(valueStyle);
+            statusStyle.normal.textColor = inPrefabMode ? 
+                new Color(0.4f, 0.8f, 0.4f) : new Color(0.8f, 0.4f, 0.4f);
+            EditorGUILayout.LabelField(inPrefabMode ? "预制体编辑模式" : "非预制体模式", statusStyle);
+            EditorGUILayout.EndHorizontal();
+            
+            EditorGUILayout.EndVertical();
+            
+            // 预制体模式提示信息和按钮
+            if (!inPrefabMode)
+            {
+                EditorGUILayout.Space(5);
+                
+                // 获取当前选中的游戏对象
+                GameObject selectedObject = Selection.activeGameObject;
+                if (selectedObject != null)
+                {
+                    // 检查是否是预制体实例
+                    GameObject prefabRoot = PrefabUtility.GetNearestPrefabInstanceRoot(selectedObject);
+                    if (prefabRoot != null)
+                    {
+                        // 获取预制体资源
+                        Object prefabAsset = PrefabUtility.GetCorrespondingObjectFromSource(prefabRoot);
+                        if (prefabAsset != null)
+                        {
+                            EditorGUILayout.BeginHorizontal();
+                            // 提示信息
+                            EditorGUILayout.HelpBox("请进入预制体编辑模式来使用组件绑定功能", MessageType.Info);
+                            
+                            // 自定义按钮样式
+                            var buttonStyle = new GUIStyle(GUI.skin.button);
+                            buttonStyle.fontSize = 12;
+                            buttonStyle.fontStyle = FontStyle.Bold;
+                            buttonStyle.normal.textColor = Color.white;
+                            buttonStyle.hover.textColor = Color.white;
+                            buttonStyle.padding = new RectOffset(10, 10, 5, 5);
+                            
+                            // 设置按钮背景色为淡黄色
+                            GUI.backgroundColor = new Color(1f, 0.92f, 0.7f);
+                            
+                            if (GUILayout.Button(new GUIContent("编辑预制体", EditorGUIUtility.IconContent("Prefab Icon").image), 
+                                buttonStyle, GUILayout.Width(100), GUILayout.Height(38)))
+                            {
+                                AssetDatabase.OpenAsset(prefabAsset);
+                            }
+                            
+                            EditorGUILayout.EndHorizontal();
+                        }
+                    }
+                }
+            }
         }
-        
-        EditorGUILayout.EndVertical();
+    }
+    
+    private void DrawSeparatorLine()
+    {
+        var rect = EditorGUILayout.GetControlRect(false, 1);
+        rect.height = 1;
+        EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 0.5f));
     }
     
     private void DrawActionButtons()
