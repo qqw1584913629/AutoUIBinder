@@ -1,25 +1,27 @@
-# UITool - Unity UI开发工具
+# UITool - Unity UI Development Tool
 
-UITool是一个强大的Unity编辑器扩展工具，旨在简化UI开发流程，提供可视化的组件绑定和自动代码生成功能。
+[English](README.md) | [中文](README_CN.md)
 
-## ✨ 主要功能
+UITool is a powerful Unity editor extension designed to simplify UI development workflow, providing visual component binding and automatic code generation capabilities.
 
-- **可视化组件绑定** - 在Hierarchy窗口中直接点击组件图标来绑定UI元素
-- **自动代码生成** - 一键生成组件引用代码，减少重复编写
-- **智能命名冲突处理** - 自动检测并处理重名组件
-- **预制体编辑支持** - 专为预制体编辑模式优化
-- **性能优化** - 高效的重绘机制，不影响编辑器性能
+## ✨ Features
 
-## 🚀 快速开始
+- **Visual Component Binding** - Click component icons in the Hierarchy window to bind UI elements
+- **Automatic Code Generation** - One-click to generate component reference code
+- **Smart Naming Conflict Resolution** - Automatically detect and handle duplicate names
+- **Prefab Edit Support** - Optimized for prefab editing mode
+- **Performance Optimized** - Efficient redraw mechanism, no impact on editor performance
 
-### 安装要求
+## 🚀 Quick Start
 
-- Unity 2021.3.39f1c1 或更高版本
-- 支持所有Unity内置UI系统（UGUI）
+### Requirements
 
-### 基本使用步骤
+- Unity 2021.3.39f1c1 or higher
+- Supports all Unity built-in UI systems (UGUI)
 
-1. **创建UI脚本**
+### Basic Usage
+
+1. **Create UI Script**
    ```csharp
    using UnityEngine;
    
@@ -27,181 +29,168 @@ UITool是一个强大的Unity编辑器扩展工具，旨在简化UI开发流程�
    {
        void Start()
        {
-           // 你的初始化代码
+           // Your initialization code
        }
    }
    ```
 
-2. **绑定组件**
-   - 将脚本添加到预制体的根对象
-   - 进入预制体编辑模式
-   - 点击需要绑定的组件图标（会高亮显示）
-   - 再次点击可取消绑定
+2. **Bind Components**
+   - Add the script to the root object of your prefab
+   - Enter prefab edit mode
+   - Click component icons to bind (will be highlighted)
+   - Click again to unbind
 
-3. **生成代码**
-   - 在Inspector中点击"生成UI"按钮
-   - 代码将自动生成到配置的路径
+3. **Generate Code**
+   - Click "Generate UI" button in Inspector
+   - Code will be generated to the configured path
 
-4. **使用生成的代码**
+4. **Use Generated Code**
    ```csharp
    void Start()
    {
-       // 自动生成的属性可以直接使用
+       // Auto-generated properties can be used directly
        Button_Start.onClick.AddListener(OnStartClick);
-       Text_Title.text = "欢迎使用UITool";
+       Text_Title.text = "Welcome to UITool";
    }
    ```
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 Assets/
-├── UITool/                    # 核心工具类
-│   └── UIPathConfig.cs        # 路径配置
-├── Editor/                    # 编辑器扩展
-│   ├── HierarchyComponentIcons.cs      # 主要功能实现
-│   ├── ShowComponentIconsEditor.cs     # 自定义Inspector
-│   └── SerializableDictionaryDrawer.cs # 字典绘制器
-├── Scripts/                   # 基础脚本
-│   ├── AutoUIBinderBase.cs       # 抽象基类
-│   ├── SerializableDictionary.cs       # 可序列化字典
-│   └── DictionaryDisplayNameAttribute.cs # 显示特性
-└── Resources/                 # 资源文件
-    └── GlobalConfig.asset     # 全局配置
+├── AutoUIBinder/                # Core tool
+│   ├── Core/                    # Core implementation
+│   │   ├── Runtime/            # Runtime code
+│   │   │   ├── Attributes/     # Attribute definitions
+│   │   │   ├── Base/          # Base classes
+│   │   │   └── Utils/         # Utility classes
+│   │   └── Editor/             # Editor code
+│   │       ├── Config/         # Configuration
+│   │       ├── Core/          # Core editor functionality
+│   │       └── Drawers/       # Custom drawers
+│   └── Examples/               # Example code
+│       ├── Runtime/            # Runtime examples
+│       │   ├── Prefabs/       # Example prefabs
+│       │   └── Scripts/       # Example scripts
+│       └── Scenes/            # Example scenes
+├── Scripts/                    # Project scripts
+│   └── Gen/                   # Generated code
+└── Resources/                 # Resource files
+    └── GlobalConfig.asset     # Global configuration
 ```
 
-## ⚙️ 配置说明
+## ⚙️ Configuration
 
-### 全局配置
+### Global Settings
 
-在`Resources/GlobalConfig.asset`中配置代码生成路径：
+Configure code generation path in `Resources/GlobalConfig.asset`:
 
-1. 在Inspector中点击"选择文件夹"
-2. 选择你的脚本目录（通常是`Assets/Scripts`）
-3. 生成的代码将保存在`{路径}/Gen/{类名}/`目录下
+1. Click "Select Folder" in Inspector
+2. Choose your script directory (usually `Assets/Scripts`)
+3. Generated code will be saved in `{path}/Gen/{className}/`
 
-### 代码生成规则
+### Code Generation Rules
 
-- 生成的文件命名格式：`{类名}Gen.cs`
-- 使用partial class模式，不会覆盖你的主要代码
-- 组件属性命名格式：`{节点名}_{组件类型}`
-- 自动添加XML文档注释
+- Generated file naming: `{className}Gen.cs`
+- Uses partial class pattern, won't overwrite your main code
+- Component property naming: `{NodeName}_{ComponentType}`
+- Auto-adds XML documentation comments
 
-## 🎨 界面说明
+## 🎨 Interface Guide
 
-### Hierarchy窗口增强
+### Hierarchy Window Enhancement
 
-- **背景色高亮** - 不同类型的AutoUIBinderBase用不同颜色区分
-- **组件图标** - 显示所有组件的图标
-- **绑定状态** - 已绑定的组件会有特殊标识
-- **智能交互** - 点击图标进行绑定/解绑操作
+- **Background Color** - Different colors for different AutoUIBinderBase types
+- **Component Icons** - Shows icons for all components
+- **Binding Status** - Special indicators for bound components
+- **Smart Interaction** - Click icons to bind/unbind
 
-### Inspector增强
+### Inspector Enhancement
 
-- **组件引用列表** - 以表格形式显示所有绑定的组件
-- **一键生成** - 醒目的"生成UI"按钮
-- **实时验证** - 自动检测无效引用
+- **Component Reference List** - Shows all bound components in table format
+- **One-Click Generation** - Prominent "Generate UI" button
+- **Real-time Validation** - Automatically detects invalid references
 
-## 🔧 高级功能
+## 🔧 Advanced Features
 
-### 智能命名处理
+### Smart Naming
 
-工具会自动处理以下情况：
+The tool automatically handles:
 
-- **重名检测** - 自动为重名组件添加数字后缀
-- **非法字符** - 自动替换空格为下划线
-- **关键字冲突** - 避免使用C#关键字作为变量名
-- **用户确认** - 重名时会弹出确认对话框
+- **Duplicate Detection** - Auto-adds numeric suffixes for duplicate names
+- **Invalid Characters** - Auto-replaces spaces with underscores
+- **Keyword Conflicts** - Avoids using C# keywords as variable names
+- **User Confirmation** - Shows confirmation dialog for duplicates
 
-### 性能优化特性
+### Performance Features
 
-- **按需重绘** - 只在必要时刷新Hierarchy窗口
-- **智能缓存** - 缓存颜色和状态信息
-- **事件驱动** - 基于Unity事件系统，响应及时
+- **On-Demand Redraw** - Only refreshes Hierarchy window when necessary
+- **Smart Caching** - Caches colors and states
+- **Event-Driven** - Based on Unity event system, responsive
 
-### 错误处理
+### Error Handling
 
-- **友好提示** - 所有错误都有详细的中文提示
-- **文件备份** - 覆盖文件前自动创建备份
-- **异常恢复** - 编辑器重启后自动恢复绑定状态
+- **Friendly Tips** - All errors have detailed Chinese messages
+- **File Backup** - Auto-creates backup before overwriting
+- **Exception Recovery** - Auto-recovers binding state after editor restart
 
-## 🐛 故障排除
+## 🐛 Troubleshooting
 
-### 常见问题
+### Common Issues
 
-**Q: 生成代码时提示路径错误**
-A: 检查GlobalConfig中的路径设置，确保目录存在且有写入权限
+**Q: Path error when generating code**
+A: Check path settings in GlobalConfig, ensure directory exists and has write permission
 
-**Q: 预制体编辑模式下看不到图标**
-A: 确保预制体根对象或其子对象有AutoUIBinderBase组件
+**Q: Can't see icons in prefab edit mode**
+A: Ensure prefab root or child objects have AutoUIBinderBase component
 
-**Q: 绑定的组件在代码中访问为null**
-A: 确保预制体已保存，并且生成代码后重新编译了项目
+**Q: Bound components are null in code**
+A: Make sure prefab is saved and project is recompiled after code generation
 
-**Q: Hierarchy窗口性能卡顿**
-A: 工具已优化性能，如仍有问题，请检查是否有其他插件冲突
+**Q: Hierarchy window performance lag**
+A: Tool is optimized for performance, check for plugin conflicts if issues persist
 
-### 调试信息
+### Debug Information
 
-工具提供详细的日志信息，所有日志都以`[UITool]`前缀标识：
+Tool provides detailed logs with `[UITool]` prefix:
 
-- **Info级别** - 正常操作记录
-- **Warning级别** - 潜在问题提醒  
-- **Error级别** - 错误详情和堆栈
+- **Info Level** - Normal operation records
+- **Warning Level** - Potential issue alerts
+- **Error Level** - Error details and stack traces
 
-## 📈 最佳实践
+## 📈 Best Practices
 
-### 推荐的项目结构
+### Recommended Project Structure
 
 ```
 Scripts/
-├── UI/                        # UI相关脚本
-│   ├── Panels/               # 面板脚本
+├── UI/                        # UI related scripts
+│   ├── Panels/               # Panel scripts
 │   │   ├── MainMenuPanel.cs
 │   │   └── SettingsPanel.cs
-│   └── Gen/                  # 生成的代码目录
+│   └── Gen/                  # Generated code directory
 │       ├── MainMenuPanel/
 │       └── SettingsPanel/
-├── Gameplay/                 # 游戏逻辑
-└── Common/                   # 通用组件
+├── Gameplay/                 # Game logic
+└── Common/                   # Common components
 ```
 
-### 命名约定
+### Naming Conventions
 
-- **预制体名称** - 使用PascalCase，如`MainMenuPanel`
-- **节点名称** - 使用有意义的名称，如`Button_Start`、`Text_Title`
-- **脚本类名** - 与预制体名称保持一致
+- **Prefab Names** - Use PascalCase, like `MainMenuPanel`
+- **Node Names** - Use meaningful names, like `Button_Start`, `Text_Title`
+- **Script Class Names** - Match with prefab names
 
-### 性能建议
+### Performance Tips
 
-- 避免在单个面板中绑定过多组件（建议<50个）
-- 大型UI可以拆分为多个子面板
-- 生成代码后及时提交版本控制
+- Avoid binding too many components in a single panel (<50 recommended)
+- Split large UIs into sub-panels
+- Commit to version control after code generation
 
-## 🤝 贡献指南
+## 📄 License
 
-欢迎提交Issue和Pull Request来帮助改进UITool！
-
-### 开发环境
-
-1. Unity 2021.3.39f1c1
-2. 支持.NET Standard 2.1
-3. 推荐使用Visual Studio或JetBrains Rider
-
-### 提交规范
-
-- 代码需要添加中文注释
-- 遵循现有的代码风格
-- 提交前请测试所有功能
-
-## 📄 许可证
-
-本项目采用MIT许可证，详见LICENSE文件。
-
-## 🙏 致谢
-
-感谢所有为UITool项目做出贡献的开发者！
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**UITool** - 让Unity UI开发更高效！
+**UITool** - Make Unity UI development more efficient!
