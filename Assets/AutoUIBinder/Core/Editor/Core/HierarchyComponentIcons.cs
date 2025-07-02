@@ -941,7 +941,7 @@ namespace UITool
             
             // 检查当前组件是否是AutoUIBinderBase
             bool isAutoUIBinderBase = component is AutoUIBinderBase;
-
+            
             if (isAutoUIBinderBase)
             {
                 // 如果是AutoUIBinderBase，查找最近的父级AutoUIBinderBase
