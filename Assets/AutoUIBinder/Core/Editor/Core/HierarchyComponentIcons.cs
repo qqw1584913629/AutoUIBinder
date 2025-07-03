@@ -6,7 +6,7 @@ using System.Linq;
 using UnityEditor.SceneManagement;
 using static UnityEngine.Random;
 
-namespace UITool
+namespace AutoUIBinder
 {
     [InitializeOnLoad]
     public class HierarchyComponentIcons
@@ -527,7 +527,7 @@ namespace UITool
             }
             catch (System.Exception e)
             {
-                Debug.LogError($"[UITool] Error in HierarchyWindowItemOnGUI: {e.Message}\n{e.StackTrace}");
+                Debug.LogError($"[AutoUIBinder] Error in HierarchyWindowItemOnGUI: {e.Message}\n{e.StackTrace}");
             }
         }
 

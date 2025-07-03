@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEditor;
 #endif
 
-[CreateAssetMenu(fileName = "UIPathConfig", menuName = "UITool/Create UI Path Config")]
+[CreateAssetMenu(fileName = "UIPathConfig", menuName = "AutoUIBinder/Create UI Path Config")]
 public class UIPathConfig : ScriptableObject
 {
     [SerializeField, ReadOnly]

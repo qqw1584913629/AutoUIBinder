@@ -13,6 +13,12 @@ public abstract class AutoUIBinderBase : MonoBehaviour
 
     public Dictionary<string, Component> ComponentRefs => componentRefs;
 
+    protected virtual void Awake()
+    {
+        // 自动绑定所有事件
+        UIEventBinder.BindEvents(this);
+    }
+
     public void AddComponentRef(string key, Component component)
     {
         if (!componentRefs.ContainsKey(key))

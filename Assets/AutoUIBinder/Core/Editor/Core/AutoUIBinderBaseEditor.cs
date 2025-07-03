@@ -5,13 +5,189 @@ using System.Text;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEditor.SceneManagement;
-using UITool;
+using AutoUIBinder;
+using UnityEngine.Events;
+using System.Reflection;
+using Microsoft.CSharp;
+using System.CodeDom;
 
 [CustomEditor(typeof(AutoUIBinderBase), true)]
 public class AutoUIBinderBaseEditor : Editor
 {
-    private bool showInfoFoldout = true;  // 添加折叠状态变量
+    private bool showInfoFoldout = true;
+    private bool showEventsFoldout = true;
+    private Dictionary<string, bool> componentFoldouts = new Dictionary<string, bool>();
+
+    // 样式缓存
+    private GUIStyle titleStyle;
+    private GUIStyle componentHeaderStyle;
+    private GUIStyle eventLabelStyle;
+    private GUIStyle paramLabelStyle;
+    private GUIStyle toggleStyle;
     
+    // 颜色定义
+    private readonly Color kHeaderColor = new Color(0.1f, 0.1f, 0.1f, 0.2f);
+    private readonly Color kComponentHeaderColor = new Color(0.15f, 0.15f, 0.15f, 0.3f);
+    private readonly Color kEventBackgroundColor = new Color(1f, 1f, 1f, 0.03f);
+    private readonly Color kBorderColor = new Color(0f, 0f, 0f, 0.2f);
+    private readonly Color kHighlightColor = new Color(0.2f, 0.6f, 1f, 0.5f);
+
+    private void InitStyles()
+    {
+        if (titleStyle == null)
+        {
+            titleStyle = new GUIStyle(EditorStyles.foldout)
+            {
+                fontSize = 12,
+                fontStyle = FontStyle.Bold,
+                fixedHeight = 28,
+                padding = new RectOffset(20, 0, 6, 0)
+            };
+            titleStyle.normal.textColor = EditorGUIUtility.isProSkin ? Color.white : Color.black;
+        }
+
+        if (componentHeaderStyle == null)
+        {
+            componentHeaderStyle = new GUIStyle(EditorStyles.foldout)
+            {
+                fontSize = 11,
+                padding = new RectOffset(25, 25, 6, 5),
+                margin = new RectOffset(0, 0, 1, 1),
+                fixedHeight = 26
+            };
+            componentHeaderStyle.normal.textColor = EditorGUIUtility.isProSkin ? 
+                new Color(0.9f, 0.9f, 0.9f) : new Color(0.2f, 0.2f, 0.2f);
+        }
+
+        if (eventLabelStyle == null)
+        {
+            eventLabelStyle = new GUIStyle(EditorStyles.label)
+            {
+                fontSize = 11,
+                padding = new RectOffset(5, 5, 4, 4),
+                margin = new RectOffset(0, 0, 0, 0),
+                richText = true
+            };
+        }
+
+        if (paramLabelStyle == null)
+        {
+            paramLabelStyle = new GUIStyle(EditorStyles.miniLabel)
+            {
+                fontSize = 10,
+                padding = new RectOffset(2, 5, 4, 4),
+                margin = new RectOffset(0, 0, 0, 0),
+                alignment = TextAnchor.MiddleRight
+            };
+            paramLabelStyle.normal.textColor = EditorGUIUtility.isProSkin ? 
+                new Color(0.7f, 0.7f, 0.7f) : new Color(0.4f, 0.4f, 0.4f);
+        }
+
+        if (toggleStyle == null)
+        {
+            toggleStyle = new GUIStyle(EditorStyles.toggle)
+            {
+                margin = new RectOffset(8, 5, 4, 4),
+                padding = new RectOffset(0, 0, 0, 0)
+            };
+        }
+    }
+
+    private class EventInfo
+    {
+        public string Name;
+        public System.Type EventType;
+        public System.Type ParameterType;
+    }
+
+    private EventInfo[] GetAvailableEvents(Component component)
+    {
+        var events = new List<EventInfo>();
+        var type = component.GetType();
+
+        var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Where(f => typeof(UnityEventBase).IsAssignableFrom(f.FieldType));
+
+        foreach (var field in fields)
+        {
+            var eventType = field.FieldType;
+            System.Type parameterType = null;
+
+            if (eventType.IsGenericType)
+            {
+                var genericArgs = eventType.GetGenericArguments();
+                if (genericArgs.Length > 0)
+                {
+                    parameterType = genericArgs[0];
+                }
+            }
+            else
+            {
+                var invokeMethod = eventType.GetMethod("Invoke");
+                if (invokeMethod != null)
+                {
+                    var parameters = invokeMethod.GetParameters();
+                    if (parameters.Length > 0)
+                    {
+                        parameterType = parameters[0].ParameterType;
+                    }
+                }
+            }
+
+            bool isSerializable = field.IsPublic || field.GetCustomAttribute<SerializeField>() != null;
+            
+            if (isSerializable)
+            {
+                events.Add(new EventInfo
+                {
+                    Name = field.Name,
+                    EventType = eventType,
+                    ParameterType = parameterType
+                });
+            }
+        }
+
+        return events.OrderBy(e => e.Name).ToArray();
+    }
+
+    private bool IsEventBound(AutoUIBinderBase target, string componentName, string eventName)
+    {
+        var methods = target.GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+        foreach (var method in methods)
+        {
+            var attr = method.GetCustomAttribute<UIEventAttribute>();
+            if (attr != null && attr.ComponentName == componentName && attr.EventType == eventName)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private string GetMethodName(string componentName, string eventName)
+    {
+        // 移除 m_On 前缀
+        string cleanEventName = eventName.StartsWith("m_On") ? eventName.Substring(4) : eventName;
+        return $"On{char.ToUpper(componentName[0])}{componentName.Substring(1)}{cleanEventName}";
+    }
+
+    private string GetFriendlyTypeName(System.Type type)
+    {
+        using (var provider = new CSharpCodeProvider())
+        {
+            var typeReference = new CodeTypeReference(type);
+            string typeName = provider.GetTypeOutput(typeReference);
+            
+            int lastDot = typeName.LastIndexOf('.');
+            if (lastDot >= 0)
+            {
+                typeName = typeName.Substring(lastDot + 1);
+            }
+            
+            return typeName;
+        }
+    }
+
     public override void OnInspectorGUI()
     {
         // 首先绘制默认的Inspector内容
@@ -21,6 +197,11 @@ public class AutoUIBinderBaseEditor : Editor
         
         // 绘制信息区域
         DrawInfoSection();
+        
+        EditorGUILayout.Space(10);
+
+        // 绘制事件绑定区域
+        DrawEventBindingSection();
         
         EditorGUILayout.Space(10);
         
@@ -258,7 +439,7 @@ public class AutoUIBinderBaseEditor : Editor
                     content = content.Replace("class " + className, "partial class " + className);
                     File.WriteAllText(scriptPath, content);
                     AssetDatabase.Refresh();
-                    Debug.Log($"[UITool] 已自动将 {className} 修改为partial类");
+                    Debug.Log($"[AutoUIBinder] 已自动将 {className} 修改为partial类");
                 }
             }
 
@@ -350,7 +531,7 @@ public class AutoUIBinderBaseEditor : Editor
                 if (invalidComponents.Count > 0)
                 {
                     string invalidList = string.Join("\n- ", invalidComponents);
-                    Debug.LogWarning($"[UITool] 检测到 {invalidComponents.Count} 个无效组件引用，将被跳过:\n- {invalidList}");
+                    Debug.LogWarning($"[AutoUIBinder] 检测到 {invalidComponents.Count} 个无效组件引用，将被跳过:\n- {invalidList}");
                 }
                 
                 // 生成有效组件的属性
@@ -437,11 +618,11 @@ public class AutoUIBinderBaseEditor : Editor
             
             // 显示成功消息
             EditorUtility.DisplayDialog("成功", $"UI代码已生成到:\n{genFilePath}\n\n包含 {componentRefs.Count} 个组件引用。", "确定");
-            Debug.Log($"[UITool] UI代码生成成功: {genFilePath} (包含 {componentRefs.Count} 个组件)");
+            Debug.Log($"[AutoUIBinder] UI代码生成成功: {genFilePath} (包含 {componentRefs.Count} 个组件)");
         }
         catch (System.Exception ex)
         {
-            Debug.LogError($"[UITool] UI代码生成失败: {ex.Message}\n{ex.StackTrace}");
+            Debug.LogError($"[AutoUIBinder] UI代码生成失败: {ex.Message}\n{ex.StackTrace}");
             EditorUtility.DisplayDialog("错误", $"UI代码生成失败:\n{ex.Message}", "确定");
         }
     }
@@ -491,7 +672,7 @@ public class AutoUIBinderBaseEditor : Editor
         autoUIBinderBase.ComponentRefs.Clear();
         EditorUtility.SetDirty(target);
         
-        Debug.Log("[UITool] 已清空所有组件绑定");
+        Debug.Log("[AutoUIBinder] 已清空所有组件绑定");
         EditorUtility.DisplayDialog("成功", "已清空所有组件绑定", "确定");
     }
     
@@ -522,7 +703,7 @@ public class AutoUIBinderBaseEditor : Editor
             }
         }
         
-        string prefix = isManualCall ? "[UITool] 手动验证" : "[UITool] 自动验证";
+        string prefix = isManualCall ? "[AutoUIBinder] 手动验证" : "[AutoUIBinder] 自动验证";
         
         if (invalidCount > 0)
         {
@@ -562,5 +743,230 @@ public class AutoUIBinderBaseEditor : Editor
         }
 
         return string.Join("/", path);
+    }
+
+    private void DrawEventBindingSection()
+    {
+        var autoUIBinderBase = target as AutoUIBinderBase;
+        if (autoUIBinderBase == null) return;
+
+        InitStyles();
+
+        // 检查是否有任何组件包含事件
+        bool hasAnyEvents = false;
+        foreach (var pair in autoUIBinderBase.ComponentRefs)
+        {
+            if (pair.Value != null && GetAvailableEvents(pair.Value).Length > 0)
+            {
+                hasAnyEvents = true;
+                break;
+            }
+        }
+
+        if (!hasAnyEvents) return;
+
+        // 绘制主标题
+        EditorGUILayout.Space(5);
+        Rect headerRect = EditorGUILayout.GetControlRect(false, 28);
+        EditorGUI.DrawRect(headerRect, kHeaderColor);
+        
+        // 绘制标题左侧的竖线
+        EditorGUI.DrawRect(new Rect(headerRect.x, headerRect.y, 3, headerRect.height), kHighlightColor);
+        
+        // 绘制标题
+        showEventsFoldout = EditorGUI.Foldout(headerRect, showEventsFoldout, "  事件绑定", true, titleStyle);
+
+        if (!showEventsFoldout) return;
+
+        EditorGUILayout.Space(5);
+
+        // 遍历所有已绑定的组件
+        foreach (var pair in autoUIBinderBase.ComponentRefs)
+        {
+            if (pair.Value == null) continue;
+
+            var events = GetAvailableEvents(pair.Value);
+            if (events.Length == 0) continue;
+
+            if (!componentFoldouts.ContainsKey(pair.Key))
+            {
+                componentFoldouts[pair.Key] = true;
+            }
+
+            // 组件区域开始
+            EditorGUILayout.BeginVertical();
+            
+            // 绘制组件标题栏
+            Rect componentHeaderRect = EditorGUILayout.GetControlRect(false, 26);
+            EditorGUI.DrawRect(componentHeaderRect, kComponentHeaderColor);
+
+            // 获取组件图标
+            Texture2D icon = EditorGUIUtility.ObjectContent(pair.Value, pair.Value.GetType()).image as Texture2D;
+            
+            // 绘制组件名和类型
+            componentFoldouts[pair.Key] = EditorGUI.Foldout(componentHeaderRect, componentFoldouts[pair.Key], 
+                $"{pair.Key} ({pair.Value.GetType().Name})", true, componentHeaderStyle);
+
+            // 绘制图标（放在右边）
+            if (icon != null)
+            {
+                GUI.DrawTexture(new Rect(componentHeaderRect.xMax - 21, componentHeaderRect.y + 5, 16, 16), icon);
+            }
+
+            if (componentFoldouts[pair.Key])
+            {
+                EditorGUILayout.Space(1);
+
+                foreach (var eventInfo in events)
+                {
+                    Rect eventRect = EditorGUILayout.GetControlRect(false, 24);
+                    
+                    // 绘制事件背景
+                    if (IsEventBound(autoUIBinderBase, pair.Key, eventInfo.Name))
+                    {
+                        EditorGUI.DrawRect(eventRect, kEventBackgroundColor);
+                    }
+
+                    // 绘制事件内容
+                    EditorGUILayout.BeginHorizontal();
+                    
+                    bool isBound = IsEventBound(autoUIBinderBase, pair.Key, eventInfo.Name);
+                    bool newBound = EditorGUI.Toggle(
+                        new Rect(eventRect.x + 4, eventRect.y, 20, eventRect.height), 
+                        isBound, 
+                        toggleStyle
+                    );
+                    
+                    // 处理事件名称
+                    string displayName = eventInfo.Name;
+                    if (displayName.StartsWith("m_On"))
+                        displayName = displayName.Substring(4);
+                    else if (displayName.StartsWith("on"))
+                        displayName = displayName.Substring(2);
+
+                    // 参数类型
+                    string paramTypeName = eventInfo.ParameterType != null ? 
+                        $" ({GetFriendlyTypeName(eventInfo.ParameterType)})" : "";
+
+                    // 绘制事件名和参数类型
+                    float toggleWidth = 24;
+                    float spacing = 4;
+                    float paramWidth = 120;
+                    float nameWidth = eventRect.width - toggleWidth - paramWidth - spacing * 2;
+
+                    Rect nameRect = new Rect(eventRect.x + toggleWidth, eventRect.y, nameWidth, eventRect.height);
+                    Rect paramRect = new Rect(nameRect.xMax + spacing, eventRect.y, paramWidth, eventRect.height);
+
+                    EditorGUI.LabelField(nameRect, displayName, eventLabelStyle);
+                    EditorGUI.LabelField(paramRect, paramTypeName, paramLabelStyle);
+
+                    if (newBound != isBound)
+                    {
+                        if (newBound)
+                            AddEventHandler(pair.Key, eventInfo.Name, GetMethodName(pair.Key, eventInfo.Name), eventInfo.ParameterType);
+                        else
+                            RemoveEventHandler(GetMethodName(pair.Key, eventInfo.Name));
+                    }
+
+                    EditorGUILayout.EndHorizontal();
+                }
+            }
+
+            // 绘制底部边框
+            Rect borderRect = GUILayoutUtility.GetRect(0, 1);
+            EditorGUI.DrawRect(borderRect, kBorderColor);
+
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.Space(1);
+        }
+    }
+
+    private void AddEventHandler(string componentName, string eventName, string methodName, System.Type parameterType)
+    {
+        // 获取脚本文件路径
+        var script = MonoScript.FromMonoBehaviour(target as MonoBehaviour);
+        var path = AssetDatabase.GetAssetPath(script);
+        
+        // 读取文件内容
+        var lines = System.IO.File.ReadAllLines(path);
+        var insertIndex = lines.Length - 1; // 默认在类的末尾插入
+        
+        // 找到合适的插入位置
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].Contains("class") && lines[i].Contains(target.GetType().Name))
+            {
+                // 找到类定义后的第一个大括号
+                while (i < lines.Length && !lines[i].Contains("{")) i++;
+                insertIndex = i + 1;
+                break;
+            }
+        }
+
+        // 生成事件处理方法
+        var newMethod = new System.Text.StringBuilder();
+        newMethod.AppendLine();
+        newMethod.AppendLine($"    [UIEvent(\"{componentName}\", \"{eventName}\")]");
+        
+        if (parameterType != null)
+        {
+            newMethod.AppendLine($"    private void {methodName}({GetFriendlyTypeName(parameterType)} value)");
+        }
+        else
+        {
+            newMethod.AppendLine($"    private void {methodName}()");
+        }
+        
+        newMethod.AppendLine("    {");
+        newMethod.AppendLine("        // TODO: 添加事件处理逻辑");
+        newMethod.AppendLine("    }");
+
+        // 插入新方法
+        var newLines = lines.ToList();
+        newLines.Insert(insertIndex, newMethod.ToString());
+        
+        // 保存文件
+        System.IO.File.WriteAllLines(path, newLines);
+        
+        AssetDatabase.Refresh();
+    }
+
+    private void RemoveEventHandler(string methodName)
+    {
+        // 获取脚本文件路径
+        var script = MonoScript.FromMonoBehaviour(target as MonoBehaviour);
+        var path = AssetDatabase.GetAssetPath(script);
+        
+        // 读取文件内容
+        var lines = System.IO.File.ReadAllLines(path);
+        var newLines = new List<string>();
+        
+        bool skipLines = false;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].Contains($"private void {methodName}"))
+            {
+                // 跳过方法定义和方法体
+                skipLines = true;
+                i--; // 回退一行以删除特性标记
+                continue;
+            }
+            
+            if (skipLines && lines[i].Trim() == "}")
+            {
+                skipLines = false;
+                continue;
+            }
+            
+            if (!skipLines)
+            {
+                newLines.Add(lines[i]);
+            }
+        }
+        
+        // 保存文件
+        System.IO.File.WriteAllLines(path, newLines);
+        
+        AssetDatabase.Refresh();
     }
 } 
