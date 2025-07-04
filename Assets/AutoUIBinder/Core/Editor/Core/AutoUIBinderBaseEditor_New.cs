@@ -74,12 +74,12 @@ public class AutoUIBinderBaseEditor_New : Editor
         // 绘制信息区域
         DrawInfoSection();
         
-        EditorGUILayout.Space(10);
+        EditorGUILayout.Space(5);
 
         // 绘制新的事件管理器
         DrawEventManager();
         
-        EditorGUILayout.Space(10);
+        EditorGUILayout.Space(5);
         
         // 绘制操作按钮区域
         DrawActionButtons();
@@ -145,7 +145,7 @@ public class AutoUIBinderBaseEditor_New : Editor
         // 预览区域
         if (showPreview)
         {
-            EditorGUILayout.Space(10);
+            EditorGUILayout.Space(5);
             DrawCodePreview();
         }
     }
@@ -218,7 +218,19 @@ public class AutoUIBinderBaseEditor_New : Editor
             return;
         }
         
-        scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.MaxHeight(300));
+        // 动态计算合适的高度
+        int eventCount = eventBindings.Count;
+        int groupCount = eventBindings.GroupBy(e => e.ComponentName).Count();
+        
+        // 每个事件项约22px，每个组标题约30px，加上一些内边距
+        float estimatedHeight = groupCount * 35f + eventCount * 25f + 20f;
+        
+        // 限制在合理的范围内：最小80px，最大屏幕高度的60%
+        float minHeight = 80f;
+        float maxHeight = Screen.height * 0.6f;
+        float dynamicHeight = Mathf.Clamp(estimatedHeight, minHeight, maxHeight);
+        
+        scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUILayout.MaxHeight(dynamicHeight));
         
         // 按组件分组显示
         var groupedEvents = eventBindings.GroupBy(e => e.ComponentName).ToList();
@@ -274,7 +286,7 @@ public class AutoUIBinderBaseEditor_New : Editor
                 DrawEventItem(evt);
             }
             EditorGUILayout.EndVertical();
-            EditorGUILayout.Space(3);
+            EditorGUILayout.Space(1);
         }
         
         EditorGUILayout.EndScrollView();
