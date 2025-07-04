@@ -213,6 +213,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 882805431756574263, guid: 293ad6986e4eb6848909c0466529e0ac, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2172029228195589736, guid: 293ad6986e4eb6848909c0466529e0ac, type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 0
@@ -357,6 +361,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2172029229009825094, guid: 293ad6986e4eb6848909c0466529e0ac, type: 3}
+      propertyPath: eventBindingStates.pairs.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2172029229009825094, guid: 293ad6986e4eb6848909c0466529e0ac, type: 3}
+      propertyPath: eventBindingStates.pairs.Array.data[0].Key
+      value: InputField_Legacy_InputField_m_OnDidEndEdit
+      objectReference: {fileID: 0}
+    - target: {fileID: 2172029229009825094, guid: 293ad6986e4eb6848909c0466529e0ac, type: 3}
+      propertyPath: eventBindingStates.pairs.Array.data[1].Key
+      value: InputField_Legacy_InputField_m_OnValueChanged
+      objectReference: {fileID: 0}
+    - target: {fileID: 2172029229009825094, guid: 293ad6986e4eb6848909c0466529e0ac, type: 3}
+      propertyPath: eventBindingStates.pairs.Array.data[0].Value
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2172029229009825094, guid: 293ad6986e4eb6848909c0466529e0ac, type: 3}
+      propertyPath: eventBindingStates.pairs.Array.data[1].Value
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2172029229009825095, guid: 293ad6986e4eb6848909c0466529e0ac, type: 3}
       propertyPath: m_Camera
       value: 
@@ -416,6 +440,10 @@ PrefabInstance:
     - target: {fileID: 5012297636501618262, guid: 293ad6986e4eb6848909c0466529e0ac, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -99.99999
+      objectReference: {fileID: 0}
+    - target: {fileID: 6725799631177983137, guid: 293ad6986e4eb6848909c0466529e0ac, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7808087776205992549, guid: 293ad6986e4eb6848909c0466529e0ac, type: 3}
       propertyPath: m_Text

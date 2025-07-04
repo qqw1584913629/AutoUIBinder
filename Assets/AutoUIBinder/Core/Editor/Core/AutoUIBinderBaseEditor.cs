@@ -17,6 +17,7 @@ public class AutoUIBinderBaseEditor : Editor
     private bool showInfoFoldout = true;
     private bool showEventsFoldout = true;
     private Dictionary<string, bool> componentFoldouts = new Dictionary<string, bool>();
+    private Dictionary<string, Dictionary<string, bool>> selectedEventsToGenerate = new Dictionary<string, Dictionary<string, bool>>();
 
     // 样式缓存
     private GUIStyle titleStyle;
@@ -344,6 +345,8 @@ public class AutoUIBinderBaseEditor : Editor
         {
             // 生成代码前先自动验证绑定
             ValidateBindings(false); // false表示自动调用
+            // 处理事件绑定
+            ProcessEventBindings();
             GenerateUICode();
         }
         
@@ -831,9 +834,17 @@ public class AutoUIBinderBaseEditor : Editor
                     EditorGUILayout.BeginHorizontal();
                     
                     bool isBound = IsEventBound(autoUIBinderBase, pair.Key, eventInfo.Name);
+                    
+                    // 检查是否有用户选择的状态
+                    bool currentToggleState = isBound;
+                    if (selectedEventsToGenerate.ContainsKey(pair.Key) && selectedEventsToGenerate[pair.Key].ContainsKey(eventInfo.Name))
+                    {
+                        currentToggleState = selectedEventsToGenerate[pair.Key][eventInfo.Name];
+                    }
+                    
                     bool newBound = EditorGUI.Toggle(
                         new Rect(eventRect.x + 4, eventRect.y, 20, eventRect.height), 
-                        isBound, 
+                        currentToggleState, 
                         toggleStyle
                     );
                     
@@ -860,12 +871,14 @@ public class AutoUIBinderBaseEditor : Editor
                     EditorGUI.LabelField(nameRect, displayName, eventLabelStyle);
                     EditorGUI.LabelField(paramRect, paramTypeName, paramLabelStyle);
 
-                    if (newBound != isBound)
+                    // 存储用户选择的事件，但不立即生成代码
+                    if (newBound != currentToggleState)
                     {
-                        if (newBound)
-                            AddEventHandler(pair.Key, eventInfo.Name, GetMethodName(pair.Key, eventInfo.Name), eventInfo.ParameterType);
-                        else
-                            RemoveEventHandler(GetMethodName(pair.Key, eventInfo.Name));
+                        if (!selectedEventsToGenerate.ContainsKey(pair.Key))
+                        {
+                            selectedEventsToGenerate[pair.Key] = new Dictionary<string, bool>();
+                        }
+                        selectedEventsToGenerate[pair.Key][eventInfo.Name] = newBound;
                     }
 
                     EditorGUILayout.EndHorizontal();
@@ -881,9 +894,59 @@ public class AutoUIBinderBaseEditor : Editor
         }
     }
 
-    private void AddEventHandler(string componentName, string eventName, string methodName, System.Type parameterType)
+
+    private void ProcessEventBindings()
     {
-        // 获取脚本文件路径
+        var autoUIBinderBase = target as AutoUIBinderBase;
+        if (autoUIBinderBase == null) return;
+
+        foreach (var componentPair in selectedEventsToGenerate)
+        {
+            string componentName = componentPair.Key;
+            if (!autoUIBinderBase.ComponentRefs.ContainsKey(componentName)) continue;
+            
+            var component = autoUIBinderBase.ComponentRefs[componentName];
+            if (component == null) continue;
+            
+            var events = GetAvailableEvents(component);
+            
+            foreach (var eventPair in componentPair.Value)
+            {
+                string eventName = eventPair.Key;
+                bool shouldGenerate = eventPair.Value;
+                
+                var eventInfo = events.FirstOrDefault(e => e.Name == eventName);
+                if (eventInfo == null) continue;
+                
+                string methodName = GetMethodName(componentName, eventName);
+                bool methodExists = DoesMethodExist(methodName);
+                
+                if (shouldGenerate && !methodExists)
+                {
+                    // 生成事件方法到原始类文件
+                    AddEventHandlerToOriginalClass(componentName, eventName, methodName, eventInfo.ParameterType);
+                }
+                else if (!shouldGenerate && methodExists)
+                {
+                    // 删除事件方法
+                    RemoveEventHandler(methodName);
+                }
+            }
+        }
+        
+        // 清空选择的事件
+        selectedEventsToGenerate.Clear();
+    }
+    
+    private bool DoesMethodExist(string methodName)
+    {
+        var methods = target.GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+        return methods.Any(m => m.Name == methodName && m.GetCustomAttribute<UIEventAttribute>() != null);
+    }
+    
+    private void AddEventHandlerToOriginalClass(string componentName, string eventName, string methodName, System.Type parameterType)
+    {
+        // 获取原始脚本文件路径
         var script = MonoScript.FromMonoBehaviour(target as MonoBehaviour);
         var path = AssetDatabase.GetAssetPath(script);
         
@@ -891,14 +954,12 @@ public class AutoUIBinderBaseEditor : Editor
         var lines = System.IO.File.ReadAllLines(path);
         var insertIndex = lines.Length - 1; // 默认在类的末尾插入
         
-        // 找到合适的插入位置
-        for (int i = 0; i < lines.Length; i++)
+        // 找到合适的插入位置（类的末尾）
+        for (int i = lines.Length - 1; i >= 0; i--)
         {
-            if (lines[i].Contains("class") && lines[i].Contains(target.GetType().Name))
+            if (lines[i].Trim() == "}")
             {
-                // 找到类定义后的第一个大括号
-                while (i < lines.Length && !lines[i].Contains("{")) i++;
-                insertIndex = i + 1;
+                insertIndex = i;
                 break;
             }
         }
@@ -919,7 +980,7 @@ public class AutoUIBinderBaseEditor : Editor
         
         newMethod.AppendLine("    {");
         newMethod.AppendLine("        // TODO: 添加事件处理逻辑");
-        newMethod.AppendLine("    }");
+        newMethod.Append("    }");
 
         // 插入新方法
         var newLines = lines.ToList();
@@ -929,6 +990,7 @@ public class AutoUIBinderBaseEditor : Editor
         System.IO.File.WriteAllLines(path, newLines);
         
         AssetDatabase.Refresh();
+        Debug.Log($"[AutoUIBinder] 已在原始类文件中生成事件方法: {methodName}");
     }
 
     private void RemoveEventHandler(string methodName)

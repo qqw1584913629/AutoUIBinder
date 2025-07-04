@@ -8,7 +8,6 @@ public partial class ExampleUIPanel : AutoUIBinderBase
 {
     public void Start()
     {
-        Text_Title_1_1_1_Text.text = "123";
     }
 
 #if UNITY_EDITOR
@@ -22,4 +21,16 @@ public partial class ExampleUIPanel : AutoUIBinderBase
         }
     }
 #endif
+
+    [UIEvent("InputField_Legacy_InputField", "m_OnDidEndEdit")]
+    private void OnInputField_Legacy_InputFieldDidEndEdit(string value)
+    {
+        // TODO: 添加事件处理逻辑
+    }
+
+    [UIEvent("InputField_Legacy_InputField", "m_OnValueChanged")]
+    private void OnInputField_Legacy_InputFieldValueChanged(string value)
+    {
+        // TODO: 添加事件处理逻辑
+    }
 }
