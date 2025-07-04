@@ -10,26 +10,9 @@ public partial class ExampleUIPanel : AutoUIBinderBase
     {
     }
 
-#if UNITY_EDITOR
-    [ContextMenu("打印组件引用")]
-    private void PrintComponentRefs()
-    {
-        Debug.Log($"[ExampleUIPanel] 当前绑定的组件数量: {ComponentRefs.Count}");
-        foreach (var kvp in ComponentRefs)
-        {
-            Debug.Log($"  {kvp.Key} -> {kvp.Value?.GetType().Name ?? "null"}");
-        }
-    }
-#endif
 
-    [UIEvent("InputField_Legacy_InputField", "m_OnDidEndEdit")]
-    private void OnInputField_Legacy_InputFieldDidEndEdit(string value)
-    {
-        // TODO: 添加事件处理逻辑
-    }
-
-    [UIEvent("InputField_Legacy_InputField", "m_OnValueChanged")]
-    private void OnInputField_Legacy_InputFieldValueChanged(string value)
+    [UIEvent("Button_Close_Button", "m_OnClick")]
+    private void OnButton_Close_ButtonClick()
     {
         // TODO: 添加事件处理逻辑
     }

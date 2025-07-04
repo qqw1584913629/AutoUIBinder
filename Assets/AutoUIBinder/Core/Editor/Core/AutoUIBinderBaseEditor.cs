@@ -11,7 +11,7 @@ using System.Reflection;
 using Microsoft.CSharp;
 using System.CodeDom;
 
-[CustomEditor(typeof(AutoUIBinderBase), true)]
+// [CustomEditor(typeof(AutoUIBinderBase), true)] // 已禁用，使用新版本
 public class AutoUIBinderBaseEditor : Editor
 {
     private bool showInfoFoldout = true;
@@ -26,12 +26,11 @@ public class AutoUIBinderBaseEditor : Editor
     private GUIStyle paramLabelStyle;
     private GUIStyle toggleStyle;
     
-    // 颜色定义
-    private readonly Color kHeaderColor = new Color(0.1f, 0.1f, 0.1f, 0.2f);
-    private readonly Color kComponentHeaderColor = new Color(0.15f, 0.15f, 0.15f, 0.3f);
-    private readonly Color kEventBackgroundColor = new Color(1f, 1f, 1f, 0.03f);
-    private readonly Color kBorderColor = new Color(0f, 0f, 0f, 0.2f);
-    private readonly Color kHighlightColor = new Color(0.2f, 0.6f, 1f, 0.5f);
+    // 现代简洁颜色方案
+    private readonly Color kSelectedBg = new Color(0.2f, 0.5f, 1f, 0.15f);
+    private readonly Color kHoverBg = new Color(0.9f, 0.9f, 0.9f, 0.3f);
+    private readonly Color kAccent = new Color(0.2f, 0.5f, 1f, 1f);
+    private readonly Color kBorder = new Color(0.7f, 0.7f, 0.7f, 0.5f);
 
     private void InitStyles()
     {
@@ -39,25 +38,21 @@ public class AutoUIBinderBaseEditor : Editor
         {
             titleStyle = new GUIStyle(EditorStyles.foldout)
             {
-                fontSize = 12,
+                fontSize = 14,
                 fontStyle = FontStyle.Bold,
-                fixedHeight = 28,
-                padding = new RectOffset(20, 0, 6, 0)
+                margin = new RectOffset(0, 0, 8, 4)
             };
-            titleStyle.normal.textColor = EditorGUIUtility.isProSkin ? Color.white : Color.black;
         }
 
         if (componentHeaderStyle == null)
         {
             componentHeaderStyle = new GUIStyle(EditorStyles.foldout)
             {
-                fontSize = 11,
-                padding = new RectOffset(25, 25, 6, 5),
-                margin = new RectOffset(0, 0, 1, 1),
-                fixedHeight = 26
+                fontSize = 12,
+                fontStyle = FontStyle.Bold,
+                padding = new RectOffset(8, 8, 6, 6),
+                margin = new RectOffset(0, 0, 2, 2)
             };
-            componentHeaderStyle.normal.textColor = EditorGUIUtility.isProSkin ? 
-                new Color(0.9f, 0.9f, 0.9f) : new Color(0.2f, 0.2f, 0.2f);
         }
 
         if (eventLabelStyle == null)
@@ -65,9 +60,9 @@ public class AutoUIBinderBaseEditor : Editor
             eventLabelStyle = new GUIStyle(EditorStyles.label)
             {
                 fontSize = 11,
-                padding = new RectOffset(5, 5, 4, 4),
-                margin = new RectOffset(0, 0, 0, 0),
-                richText = true
+                padding = new RectOffset(6, 6, 4, 4),
+                richText = true,
+                alignment = TextAnchor.MiddleLeft
             };
         }
 
@@ -76,19 +71,16 @@ public class AutoUIBinderBaseEditor : Editor
             paramLabelStyle = new GUIStyle(EditorStyles.miniLabel)
             {
                 fontSize = 10,
-                padding = new RectOffset(2, 5, 4, 4),
-                margin = new RectOffset(0, 0, 0, 0),
+                fontStyle = FontStyle.Italic,
                 alignment = TextAnchor.MiddleRight
             };
-            paramLabelStyle.normal.textColor = EditorGUIUtility.isProSkin ? 
-                new Color(0.7f, 0.7f, 0.7f) : new Color(0.4f, 0.4f, 0.4f);
         }
 
         if (toggleStyle == null)
         {
             toggleStyle = new GUIStyle(EditorStyles.toggle)
             {
-                margin = new RectOffset(8, 5, 4, 4),
+                margin = new RectOffset(8, 8, 4, 4),
                 padding = new RectOffset(0, 0, 0, 0)
             };
         }
@@ -768,20 +760,23 @@ public class AutoUIBinderBaseEditor : Editor
 
         if (!hasAnyEvents) return;
 
-        // 绘制主标题
-        EditorGUILayout.Space(5);
-        Rect headerRect = EditorGUILayout.GetControlRect(false, 28);
-        EditorGUI.DrawRect(headerRect, kHeaderColor);
+        // 现代标题设计
+        EditorGUILayout.Space(8);
         
-        // 绘制标题左侧的竖线
-        EditorGUI.DrawRect(new Rect(headerRect.x, headerRect.y, 3, headerRect.height), kHighlightColor);
+        // 绘制标题区域
+        Rect titleRect = EditorGUILayout.GetControlRect(false, 26);
         
-        // 绘制标题
-        showEventsFoldout = EditorGUI.Foldout(headerRect, showEventsFoldout, "  事件绑定", true, titleStyle);
+        // 清淡背景
+        Color bgColor = EditorGUIUtility.isProSkin ? new Color(0.3f, 0.3f, 0.3f, 0.3f) : new Color(0.9f, 0.9f, 0.9f, 0.5f);
+        EditorGUI.DrawRect(titleRect, bgColor);
+        
+        // 左侧蓝色细线
+        EditorGUI.DrawRect(new Rect(titleRect.x, titleRect.y, 2, titleRect.height), kAccent);
+        
+        // 标题文本
+        showEventsFoldout = EditorGUI.Foldout(titleRect, showEventsFoldout, "  事件绑定", true, titleStyle);
 
         if (!showEventsFoldout) return;
-
-        EditorGUILayout.Space(5);
 
         // 遍历所有已绑定的组件
         foreach (var pair in autoUIBinderBase.ComponentRefs)
@@ -799,77 +794,77 @@ public class AutoUIBinderBaseEditor : Editor
             // 组件区域开始
             EditorGUILayout.BeginVertical();
             
-            // 绘制组件标题栏
-            Rect componentHeaderRect = EditorGUILayout.GetControlRect(false, 26);
-            EditorGUI.DrawRect(componentHeaderRect, kComponentHeaderColor);
-
-            // 获取组件图标
-            Texture2D icon = EditorGUIUtility.ObjectContent(pair.Value, pair.Value.GetType()).image as Texture2D;
+            // 组件标题区域
+            EditorGUILayout.Space(4);
             
-            // 绘制组件名和类型
-            componentFoldouts[pair.Key] = EditorGUI.Foldout(componentHeaderRect, componentFoldouts[pair.Key], 
-                $"{pair.Key} ({pair.Value.GetType().Name})", true, componentHeaderStyle);
-
-            // 绘制图标（放在右边）
+            Rect compRect = EditorGUILayout.GetControlRect(false, 24);
+            Color compBg = EditorGUIUtility.isProSkin ? new Color(0.25f, 0.25f, 0.25f, 0.8f) : new Color(0.95f, 0.95f, 0.95f, 0.8f);
+            EditorGUI.DrawRect(compRect, compBg);
+            
+            // 组件图标
+            Texture2D icon = EditorGUIUtility.ObjectContent(pair.Value, pair.Value.GetType()).image as Texture2D;
             if (icon != null)
             {
-                GUI.DrawTexture(new Rect(componentHeaderRect.xMax - 21, componentHeaderRect.y + 5, 16, 16), icon);
+                GUI.DrawTexture(new Rect(compRect.x + 6, compRect.y + 4, 16, 16), icon);
             }
+            
+            // 组件名和类型
+            componentFoldouts[pair.Key] = EditorGUI.Foldout(new Rect(compRect.x + 26, compRect.y, compRect.width - 26, compRect.height),
+                componentFoldouts[pair.Key], $"{pair.Key} ({pair.Value.GetType().Name})", true, componentHeaderStyle);
 
             if (componentFoldouts[pair.Key])
             {
-                EditorGUILayout.Space(1);
-
+                EditorGUILayout.Space(2);
+                
                 foreach (var eventInfo in events)
                 {
-                    Rect eventRect = EditorGUILayout.GetControlRect(false, 24);
+                    // 事件项背景
+                    Rect eventRect = EditorGUILayout.GetControlRect(false, 22);
                     
-                    // 绘制事件背景
-                    if (IsEventBound(autoUIBinderBase, pair.Key, eventInfo.Name))
+                    // 状态检测
+                    bool isBound = IsEventBound(autoUIBinderBase, pair.Key, eventInfo.Name);
+                    bool isSelected = selectedEventsToGenerate.ContainsKey(pair.Key) && 
+                                    selectedEventsToGenerate[pair.Key].ContainsKey(eventInfo.Name) &&
+                                    selectedEventsToGenerate[pair.Key][eventInfo.Name];
+                    
+                    // 背景颜色
+                    if (isBound)
                     {
-                        EditorGUI.DrawRect(eventRect, kEventBackgroundColor);
+                        EditorGUI.DrawRect(eventRect, kSelectedBg);
                     }
-
-                    // 绘制事件内容
+                    else if (Event.current.type == EventType.Repaint && eventRect.Contains(Event.current.mousePosition))
+                    {
+                        EditorGUI.DrawRect(eventRect, kHoverBg);
+                    }
+                    
                     EditorGUILayout.BeginHorizontal();
                     
-                    bool isBound = IsEventBound(autoUIBinderBase, pair.Key, eventInfo.Name);
-                    
-                    // 检查是否有用户选择的状态
+                    // 检查事件绑定状态
                     bool currentToggleState = isBound;
                     if (selectedEventsToGenerate.ContainsKey(pair.Key) && selectedEventsToGenerate[pair.Key].ContainsKey(eventInfo.Name))
                     {
                         currentToggleState = selectedEventsToGenerate[pair.Key][eventInfo.Name];
                     }
                     
-                    bool newBound = EditorGUI.Toggle(
-                        new Rect(eventRect.x + 4, eventRect.y, 20, eventRect.height), 
-                        currentToggleState, 
-                        toggleStyle
-                    );
+                    bool newBound = EditorGUILayout.Toggle(currentToggleState, toggleStyle, GUILayout.Width(20));
                     
-                    // 处理事件名称
+                    // 事件名称显示
                     string displayName = eventInfo.Name;
                     if (displayName.StartsWith("m_On"))
                         displayName = displayName.Substring(4);
                     else if (displayName.StartsWith("on"))
                         displayName = displayName.Substring(2);
 
+                    // 已绑定的事件加粗
+                    string richText = isBound ? $"<b>{displayName}</b>" : displayName;
+                    EditorGUILayout.LabelField(richText, eventLabelStyle);
+                    
+                    GUILayout.FlexibleSpace();
+                    
                     // 参数类型
                     string paramTypeName = eventInfo.ParameterType != null ? 
-                        $" ({GetFriendlyTypeName(eventInfo.ParameterType)})" : "";
-
-                    // 绘制事件名和参数类型
-                    float toggleWidth = 24;
-                    float spacing = 4;
-                    float paramWidth = 120;
-                    float nameWidth = eventRect.width - toggleWidth - paramWidth - spacing * 2;
-
-                    Rect nameRect = new Rect(eventRect.x + toggleWidth, eventRect.y, nameWidth, eventRect.height);
-                    Rect paramRect = new Rect(nameRect.xMax + spacing, eventRect.y, paramWidth, eventRect.height);
-
-                    EditorGUI.LabelField(nameRect, displayName, eventLabelStyle);
-                    EditorGUI.LabelField(paramRect, paramTypeName, paramLabelStyle);
+                        GetFriendlyTypeName(eventInfo.ParameterType) : "无参";
+                    EditorGUILayout.LabelField(paramTypeName, paramLabelStyle, GUILayout.Width(60));
 
                     // 存储用户选择的事件，但不立即生成代码
                     if (newBound != currentToggleState)
@@ -885,12 +880,8 @@ public class AutoUIBinderBaseEditor : Editor
                 }
             }
 
-            // 绘制底部边框
-            Rect borderRect = GUILayoutUtility.GetRect(0, 1);
-            EditorGUI.DrawRect(borderRect, kBorderColor);
-
             EditorGUILayout.EndVertical();
-            EditorGUILayout.Space(1);
+            EditorGUILayout.Space(3);
         }
     }
 

@@ -433,8 +433,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   componentRefs:
     pairs:
-    - Key: Button_Close_Image
-      Value: {fileID: 2172029228860734911}
     - Key: Button_Close_Button
       Value: {fileID: 2172029228860734909}
     - Key: InputField_Legacy_InputField
