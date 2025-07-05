@@ -15,7 +15,7 @@ using System.CodeDom;
 public class AutoUIBinderBaseEditor : Editor
 {
     private bool showInfoFoldout = true;
-    private bool showEventManagerFoldout = true;
+    private bool showEventInfoFoldout = true;
     
     // 新的事件管理系统
     private List<EventBinding> eventBindings = new List<EventBinding>();
@@ -76,8 +76,8 @@ public class AutoUIBinderBaseEditor : Editor
         
         EditorGUILayout.Space(5);
 
-        // 绘制新的事件管理器
-        DrawEventManager();
+        // 绘制事件信息
+        DrawEventInfo();
         
         EditorGUILayout.Space(5);
         
@@ -106,11 +106,23 @@ public class AutoUIBinderBaseEditor : Editor
             bool inPrefabMode = stage != null;
             EditorGUILayout.LabelField($"预制体状态: {(inPrefabMode ? "预制体编辑模式" : "非预制体模式")}");
             
+            // 如果不是预制体模式，显示打开预制体编辑按钮
+            if (!inPrefabMode)
+            {
+                EditorGUILayout.Space(5);
+                GUI.backgroundColor = new Color(0.4f, 0.8f, 0.4f); // 绿色背景
+                if (GUILayout.Button("打开预制体编辑", GUILayout.Height(25)))
+                {
+                    OpenPrefabEditMode();
+                }
+                GUI.backgroundColor = Color.white;
+            }
+            
             EditorGUILayout.EndVertical();
         }
     }
     
-    private void DrawEventManager()
+    private void DrawEventInfo()
     {
         var autoUIBinderBase = target as AutoUIBinderBase;
         if (autoUIBinderBase == null) return;
@@ -128,9 +140,9 @@ public class AutoUIBinderBaseEditor : Editor
             lastComponentHash = currentComponentHash;
         }
         
-        showEventManagerFoldout = EditorGUILayout.Foldout(showEventManagerFoldout, "智能事件管理器", true);
+        showEventInfoFoldout = EditorGUILayout.Foldout(showEventInfoFoldout, "事件信息", true);
         
-        if (!showEventManagerFoldout) return;
+        if (!showEventInfoFoldout) return;
         
         EditorGUILayout.Space(5);
         
@@ -937,5 +949,72 @@ public class AutoUIBinderBaseEditor : Editor
         }
         
         return sb.ToString();
+    }
+    
+    private void OpenPrefabEditMode()
+    {
+        var autoUIBinderBase = target as AutoUIBinderBase;
+        if (autoUIBinderBase == null) return;
+        
+        // 获取GameObject
+        var gameObject = autoUIBinderBase.gameObject;
+        
+        // 检查是否是预制体实例
+        var prefabType = PrefabUtility.GetPrefabInstanceStatus(gameObject);
+        if (prefabType == PrefabInstanceStatus.Connected)
+        {
+            // 如果是预制体实例，打开预制体编辑模式
+            var prefabAsset = PrefabUtility.GetCorrespondingObjectFromSource(gameObject);
+            if (prefabAsset != null)
+            {
+                AssetDatabase.OpenAsset(prefabAsset);
+                Debug.Log($"[AutoUIBinder] 已打开预制体编辑模式: {prefabAsset.name}");
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("错误", "无法找到对应的预制体资源", "确定");
+            }
+        }
+        else
+        {
+            // 如果不是预制体实例，提示用户
+            if (EditorUtility.DisplayDialog("创建预制体", 
+                "当前对象不是预制体实例。\n是否要将其保存为预制体？", 
+                "创建预制体", "取消"))
+            {
+                CreatePrefabFromGameObject(gameObject);
+            }
+        }
+    }
+    
+    private void CreatePrefabFromGameObject(GameObject gameObject)
+    {
+        // 打开文件保存对话框
+        string path = EditorUtility.SaveFilePanelInProject(
+            "保存预制体", 
+            gameObject.name, 
+            "prefab", 
+            "请选择保存预制体的位置");
+            
+        if (!string.IsNullOrEmpty(path))
+        {
+            // 创建预制体
+            var prefab = PrefabUtility.SaveAsPrefabAsset(gameObject, path);
+            if (prefab != null)
+            {
+                // 选中新创建的预制体
+                Selection.activeObject = prefab;
+                EditorGUIUtility.PingObject(prefab);
+                
+                // 打开预制体编辑模式
+                AssetDatabase.OpenAsset(prefab);
+                
+                Debug.Log($"[AutoUIBinder] 已创建预制体并打开编辑模式: {path}");
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("错误", "创建预制体失败", "确定");
+            }
+        }
     }
 }

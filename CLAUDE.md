@@ -78,10 +78,11 @@ public class MyUIPanel : AutoUIBinderBase
 3. 确保目标路径具有写入权限
 
 ### 构建和测试
-- 使用Unity标准构建流程
+- 使用Unity标准构建流程（File > Build Settings）
 - 主要在Unity编辑器中开发和测试
 - 生成的代码会自动被Unity编译系统识别
-- 使用菜单"AutoUIBinder/运行编辑器测试"来验证功能
+- 通过Unity Console窗口查看`[AutoUIBinder]`前缀的日志输出
+- 编辑器代码修改后需要重启Unity或重新编译Assembly-CSharp-Editor
 
 ## 项目结构
 
@@ -140,9 +141,29 @@ Assets/
 - 代码注释和字符串已统一更新
 
 ### 测试和验证
-- 使用菜单"AutoUIBinder/验证组件绑定"检查绑定状态
+- 在Inspector面板中检查组件绑定状态
 - 生成代码后务必测试所有组件引用是否正确
 - 确保事件绑定方法的参数类型与UI组件事件匹配
+- 使用Unity Console查看详细的绑定日志信息
+
+## 开发命令和工作流
+
+### Unity编辑器操作
+- **打开项目**: 使用Unity Hub打开项目目录
+- **重新编译**: 使用 `Assets > Reimport All` 或 `Assets > Refresh`
+- **清理控制台**: 使用 `Window > Console` 并点击Clear按钮
+- **查看日志**: 在Console窗口中筛选`[AutoUIBinder]`前缀的日志
+
+### 编辑器扩展开发
+- 编辑器脚本位于`Assets/AutoUIBinder/Core/Editor/`目录
+- 修改编辑器代码后，Unity会自动重新编译Assembly-CSharp-Editor
+- 如果编辑器行为异常，尝试重启Unity编辑器
+- 使用`#if UNITY_EDITOR`条件编译确保编辑器代码不会包含在构建中
+
+### 代码生成调试
+- 生成路径配置: 检查`Resources/GlobalConfig.asset`
+- 生成失败时: 检查目标目录权限和路径有效性
+- 查看生成日志: 在Console窗口中查看详细错误信息
 
 ## 注意事项
 
