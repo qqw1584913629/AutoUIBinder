@@ -14,15 +14,11 @@ namespace AutoUIBinder
         // 用于存储GameObject的名称，用于检测重命名
         private static Dictionary<int, string> gameObjectNames = new Dictionary<int, string>();
         
-        // 性能优化：控制重绘频率
-        private static bool needsRepaint = false;
-        private static double lastRepaintTime = 0;
-        private const double REPAINT_INTERVAL = 0.1; // 100ms间隔
+        // 简化重绘机制：只在需要时进行一次性重绘
 
         static HierarchyComponentIcons()
         {
             EditorApplication.hierarchyWindowItemOnGUI += HierarchyWindowItemOnGUI;
-            EditorApplication.update += OnEditorUpdate;
                 
             // 监听预制体打开事件
             PrefabStage.prefabStageOpened += OnPrefabStageOpened;
@@ -36,9 +32,6 @@ namespace AutoUIBinder
             Selection.selectionChanged += OnSelectionChanged;
             // 监听编辑器更新事件来进行周期性清理
             EditorApplication.update += OnEditorUpdateWithCleanup;
-
-            // 初始化
-            needsRepaint = true;
         }
 
         private static void OnAfterAssemblyReload()
@@ -330,15 +323,12 @@ namespace AutoUIBinder
             return path.ToString().Replace(" ", "_");
         }
 
-        private static void OnEditorUpdate()
+        /// <summary>
+        /// 立即重绘Hierarchy窗口
+        /// </summary>
+        private static void RequestRepaint()
         {
-            // 性能优化：只在需要时重绘，并限制重绘频率
-            if (needsRepaint && EditorApplication.timeSinceStartup > lastRepaintTime + REPAINT_INTERVAL)
-            {
-                EditorApplication.RepaintHierarchyWindow();
-                lastRepaintTime = EditorApplication.timeSinceStartup;
-                needsRepaint = false;
-            }
+            EditorApplication.RepaintHierarchyWindow();
         }
         
         // 新的编辑器更新方法，包含清理逻辑
@@ -347,8 +337,6 @@ namespace AutoUIBinder
         
         private static void OnEditorUpdateWithCleanup()
         {
-            // 调用原有的更新逻辑
-            OnEditorUpdate();
             
             // 定期清理孤儿组件
             if (EditorApplication.timeSinceStartup > lastCleanupTime + CLEANUP_INTERVAL)
@@ -366,11 +354,6 @@ namespace AutoUIBinder
         {
             // 选择变化时标记需要重绘
             RequestRepaint();
-        }
-        
-        private static void RequestRepaint()
-        {
-            needsRepaint = true;
         }
 
         private static bool ShouldShowIcons(GameObject gameObject)

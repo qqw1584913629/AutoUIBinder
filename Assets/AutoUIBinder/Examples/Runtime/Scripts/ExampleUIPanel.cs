@@ -9,4 +9,10 @@ public partial class ExampleUIPanel : AutoUIBinderBase
     public void Start()
     {
     }
+
+    [UIEvent("Toggle_2_Toggle", "onValueChanged")]
+    private void OnToggle_2_ToggleonValueChanged(bool value)
+    {
+        
+    }
 }

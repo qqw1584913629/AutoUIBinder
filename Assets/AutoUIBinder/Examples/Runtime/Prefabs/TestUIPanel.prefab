@@ -503,6 +503,8 @@ MonoBehaviour:
       Value: {fileID: 1969948658979344519}
     - Key: GameObject_ToggleGroup
       Value: {fileID: 8761102948460193435}
+    - Key: GameObject_RectTransform
+      Value: {fileID: 2739223906511483961}
 --- !u!223 &2172029229009825095
 Canvas:
   m_ObjectHideFlags: 0
