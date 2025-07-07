@@ -429,8 +429,11 @@ namespace AutoUIBinder.Editor
             codeBuilder.AppendLine();
             
             // 添加using语句
-            codeBuilder.AppendLine("using UnityEngine;");
-            codeBuilder.AppendLine("using UnityEngine.UI;");
+            var usingStatements = GetRequiredUsingStatements(target);
+            foreach (var usingStatement in usingStatements)
+            {
+                codeBuilder.AppendLine(usingStatement);
+            }
             codeBuilder.AppendLine();
             
             // 生成partial类定义
@@ -463,6 +466,54 @@ namespace AutoUIBinder.Editor
             
             // 写入文件
             File.WriteAllText(filePath, codeBuilder.ToString(), System.Text.Encoding.UTF8);
+        }
+
+        /// <summary>
+        /// 获取生成代码所需的using语句
+        /// </summary>
+        private List<string> GetRequiredUsingStatements(AutoUIBinderBase target)
+        {
+            var usingStatements = new HashSet<string>();
+            
+            // 基础的using语句
+            usingStatements.Add("using UnityEngine;");
+            usingStatements.Add("using UnityEngine.UI;");
+            
+            // 检查所有组件类型，添加对应的using语句
+            foreach (var kvp in target.ComponentRefs)
+            {
+                if (kvp.Value != null)
+                {
+                    var componentType = kvp.Value.GetType();
+                    var namespaceName = componentType.Namespace;
+                    
+                    // 根据命名空间添加对应的using语句
+                    if (!string.IsNullOrEmpty(namespaceName))
+                    {
+                        switch (namespaceName)
+                        {
+                            case "TMPro":
+                                usingStatements.Add("using TMPro;");
+                                break;
+                            case "UnityEngine.Video":
+                                usingStatements.Add("using UnityEngine.Video;");
+                                break;
+                            case "UnityEngine.Playables":
+                                usingStatements.Add("using UnityEngine.Playables;");
+                                break;
+                            case "UnityEngine.Timeline":
+                                usingStatements.Add("using UnityEngine.Timeline;");
+                                break;
+                            // 可以根据需要添加更多命名空间
+                        }
+                    }
+                }
+            }
+            
+            // 转换为排序的列表
+            var result = usingStatements.ToList();
+            result.Sort();
+            return result;
         }
 
         private string GetFriendlyTypeName(System.Type type)

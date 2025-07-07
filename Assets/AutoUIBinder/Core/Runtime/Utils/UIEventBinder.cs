@@ -77,64 +77,8 @@ namespace AutoUIBinder
                 Debug.Log($"[AutoUIBinder] - {field.Name}: {fieldType.Name} {paramInfo}");
             }
 
-            // 查找匹配的事件字段
-            FieldInfo matchingField = null;
-            foreach (var field in eventFields)
-            {
-                // 首先检查事件名称是否匹配
-                if (!field.Name.Equals(attr.EventType, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                var fieldType = field.FieldType;
-                var fieldParams = fieldType.GetMethod("Invoke")?.GetParameters();
-                
-                Debug.Log($"[AutoUIBinder] 比较字段 {field.Name}:");
-                Debug.Log($"[AutoUIBinder]   字段类型: {fieldType.Name}");
-                string paramInfo = fieldParams != null && fieldParams.Length > 0 
-                    ? $"<{string.Join(", ", fieldParams.Select(p => ReflectionCache.GetFriendlyTypeName(p.ParameterType)))}>"
-                    : "(无参数)";
-                Debug.Log($"[AutoUIBinder]   字段参数: {paramInfo}");
-                Debug.Log($"[AutoUIBinder]   期望参数: {(expectedParamType != null ? ReflectionCache.GetFriendlyTypeName(expectedParamType) : "(无参数)")}");
-
-                bool paramsMatch = false;
-                if (fieldParams != null && methodParamTypes.Length > 0)
-                {
-                    if (fieldParams.Length == methodParamTypes.Length)
-                    {
-                        paramsMatch = true;
-                        for (int i = 0; i < fieldParams.Length; i++)
-                        {
-                            var fieldParamType = fieldParams[i].ParameterType;
-                            var methodParamType = methodParamTypes[i];
-                            
-                            // 检查类型是否兼容（考虑继承关系）
-                            if (!fieldParamType.IsAssignableFrom(methodParamType))
-                            {
-                                Debug.Log($"[AutoUIBinder]   参数类型不匹配: {ReflectionCache.GetFriendlyTypeName(fieldParamType)} != {ReflectionCache.GetFriendlyTypeName(methodParamType)}");
-                                paramsMatch = false;
-                                break;
-                            }
-                        }
-                    }
-                }
-                else if (fieldParams == null && methodParamTypes.Length == 0)
-                {
-                    paramsMatch = true;
-                }
-                
-                if (paramsMatch)
-                {
-                    matchingField = field;
-                    Debug.Log($"[AutoUIBinder] 找到匹配的字段: {field.Name}");
-                    break;
-                }
-                else
-                {
-                    Debug.Log($"[AutoUIBinder]   字段不匹配");
-                }
-            }
+            // 查找匹配的事件字段 - 使用智能匹配
+            FieldInfo matchingField = FindEventField(component, attr.EventType, methodParamTypes);
 
             if (matchingField == null)
             {
@@ -165,6 +109,148 @@ namespace AutoUIBinder
                     Debug.LogError($"[AutoUIBinder] 详细错误: {ex}");
                 }
             }
+        }
+
+        /// <summary>
+        /// 智能查找事件字段 - 通过多种匹配策略查找
+        /// </summary>
+        private static FieldInfo FindEventField(Component component, string eventName, Type[] expectedParamTypes)
+        {
+            var componentType = component.GetType();
+            var eventFields = ReflectionCache.GetUnityEventFields(componentType);
+            
+            Debug.Log($"[AutoUIBinder] 查找事件 '{eventName}'，在 {componentType.Name} 组件中");
+            
+            // 策略1: 尝试通过属性名直接查找对应的私有字段
+            var possibleFieldNames = GeneratePossibleFieldNames(eventName);
+            foreach (var fieldName in possibleFieldNames)
+            {
+                var field = eventFields.FirstOrDefault(f => f.Name.Equals(fieldName, StringComparison.OrdinalIgnoreCase));
+                if (field != null && IsParameterCompatible(field, expectedParamTypes))
+                {
+                    Debug.Log($"[AutoUIBinder] 通过字段名匹配找到: {field.Name}");
+                    return field;
+                }
+            }
+            
+            // 策略2: 通过反射查找公开属性，然后找到背后的字段
+            var property = componentType.GetProperty(eventName, BindingFlags.Public | BindingFlags.Instance);
+            if (property != null && typeof(UnityEventBase).IsAssignableFrom(property.PropertyType))
+            {
+                // 通过属性getter方法的IL代码分析找到背后的字段（复杂但准确）
+                var backingField = FindBackingFieldForProperty(componentType, property);
+                if (backingField != null && IsParameterCompatible(backingField, expectedParamTypes))
+                {
+                    Debug.Log($"[AutoUIBinder] 通过属性反射找到背后字段: {backingField.Name}");
+                    return backingField;
+                }
+            }
+            
+            // 策略3: 模糊匹配 - 比较事件名称的相似度
+            foreach (var field in eventFields)
+            {
+                if (IsEventNameSimilar(field.Name, eventName) && IsParameterCompatible(field, expectedParamTypes))
+                {
+                    Debug.Log($"[AutoUIBinder] 通过模糊匹配找到: {field.Name}");
+                    return field;
+                }
+            }
+            
+            Debug.LogWarning($"[AutoUIBinder] 无法找到匹配的事件字段，尝试过的字段名: {string.Join(", ", possibleFieldNames)}");
+            return null;
+        }
+        
+        /// <summary>
+        /// 根据公开事件名生成可能的私有字段名
+        /// </summary>
+        private static string[] GeneratePossibleFieldNames(string eventName)
+        {
+            var possibilities = new List<string>();
+            
+            // 直接匹配
+            possibilities.Add(eventName);
+            
+            // Unity常见模式: onClick -> m_OnClick
+            if (eventName.StartsWith("on") && eventName.Length > 2)
+            {
+                string withoutOn = eventName.Substring(2);
+                possibilities.Add($"m_On{withoutOn}");
+                possibilities.Add($"_on{withoutOn}");
+                possibilities.Add($"on{withoutOn}");
+            }
+            
+            // 其他可能的命名模式
+            possibilities.Add($"m_{eventName}");
+            possibilities.Add($"_{eventName}");
+            possibilities.Add($"m_{char.ToUpper(eventName[0])}{eventName.Substring(1)}");
+            
+            return possibilities.ToArray();
+        }
+        
+        /// <summary>
+        /// 通过属性查找背后的私有字段
+        /// </summary>
+        private static FieldInfo FindBackingFieldForProperty(Type type, PropertyInfo property)
+        {
+            // 简化版本：通过命名约定查找
+            var possibleNames = new[]
+            {
+                $"m_{property.Name}",
+                $"_{property.Name}",
+                $"m_On{property.Name.Substring(2)}", // onClick -> m_OnClick
+                $"<{property.Name}>k__BackingField" // 自动属性的backing field
+            };
+            
+            foreach (var name in possibleNames)
+            {
+                var field = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Instance);
+                if (field != null && field.FieldType == property.PropertyType)
+                {
+                    return field;
+                }
+            }
+            
+            return null;
+        }
+        
+        /// <summary>
+        /// 检查事件名称是否相似
+        /// </summary>
+        private static bool IsEventNameSimilar(string fieldName, string eventName)
+        {
+            // 去除前缀后比较
+            var cleanFieldName = fieldName;
+            if (fieldName.StartsWith("m_"))
+                cleanFieldName = fieldName.Substring(2);
+            if (fieldName.StartsWith("_"))
+                cleanFieldName = fieldName.Substring(1);
+                
+            return cleanFieldName.Equals(eventName, StringComparison.OrdinalIgnoreCase) ||
+                   cleanFieldName.EndsWith(eventName, StringComparison.OrdinalIgnoreCase) ||
+                   eventName.EndsWith(cleanFieldName, StringComparison.OrdinalIgnoreCase);
+        }
+        
+        /// <summary>
+        /// 检查字段的参数类型是否兼容
+        /// </summary>
+        private static bool IsParameterCompatible(FieldInfo field, Type[] expectedParamTypes)
+        {
+            var fieldType = field.FieldType;
+            var invokeMethod = fieldType.GetMethod("Invoke");
+            if (invokeMethod == null) return false;
+            
+            var fieldParams = invokeMethod.GetParameters();
+            
+            if (expectedParamTypes.Length != fieldParams.Length)
+                return false;
+                
+            for (int i = 0; i < expectedParamTypes.Length; i++)
+            {
+                if (!fieldParams[i].ParameterType.IsAssignableFrom(expectedParamTypes[i]))
+                    return false;
+            }
+            
+            return true;
         }
     }
 }

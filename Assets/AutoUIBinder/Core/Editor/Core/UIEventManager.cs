@@ -208,9 +208,12 @@ namespace AutoUIBinder.Editor
                     }
                 }
 
+                // 转换内部字段名为公开属性名
+                string eventName = ConvertToPublicEventName(field.Name);
+                
                 events.Add(new EventInfo
                 {
-                    Name = field.Name,
+                    Name = eventName,
                     EventType = eventType,
                     ParameterType = parameterType
                 });
@@ -244,6 +247,33 @@ namespace AutoUIBinder.Editor
             return $"On{char.ToUpper(componentName[0])}{componentName.Substring(1)}{cleanEventName}";
         }
         
+        /// <summary>
+        /// 将内部字段名转换为公开事件名 - 使用通用规则
+        /// </summary>
+        private string ConvertToPublicEventName(string fieldName)
+        {
+            // Unity标准模式: m_OnXxx -> onXxx
+            if (fieldName.StartsWith("m_On") && fieldName.Length > 4)
+            {
+                string withoutPrefix = fieldName.Substring(4); // 去掉 "m_On"
+                return "on" + withoutPrefix; // 添加小写 "on"
+            }
+            
+            // 其他常见模式: m_xxx -> xxx
+            if (fieldName.StartsWith("m_") && fieldName.Length > 2)
+            {
+                return fieldName.Substring(2);
+            }
+            
+            // 下划线模式: _xxx -> xxx
+            if (fieldName.StartsWith("_") && fieldName.Length > 1)
+            {
+                return fieldName.Substring(1);
+            }
+            
+            return fieldName;
+        }
+
         private string GetComponentHash(AutoUIBinderBase target)
         {
             var sb = new System.Text.StringBuilder();
