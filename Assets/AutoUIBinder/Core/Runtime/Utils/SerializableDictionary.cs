@@ -2,47 +2,50 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
-[Serializable]
-public class SerializableKeyValuePair<TKey, TValue>
+namespace AutoUIBinder
 {
-    public TKey Key;
-    public TValue Value;
-
-    public SerializableKeyValuePair()
+    [Serializable]
+    public class SerializableKeyValuePair<TKey, TValue>
     {
-    }
+        public TKey Key;
+        public TValue Value;
 
-    public SerializableKeyValuePair(TKey key, TValue value)
-    {
-        Key = key;
-        Value = value;
-    }
-}
-
-[Serializable]
-public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
-{
-    [SerializeField]
-    private List<SerializableKeyValuePair<TKey, TValue>> pairs = new List<SerializableKeyValuePair<TKey, TValue>>();
-
-    public void OnBeforeSerialize()
-    {
-        pairs.Clear();
-        foreach (KeyValuePair<TKey, TValue> kvp in this)
+        public SerializableKeyValuePair()
         {
-            pairs.Add(new SerializableKeyValuePair<TKey, TValue>(kvp.Key, kvp.Value));
+        }
+
+        public SerializableKeyValuePair(TKey key, TValue value)
+        {
+            Key = key;
+            Value = value;
         }
     }
 
-    public void OnAfterDeserialize()
+    [Serializable]
+    public class SerializableDictionary<TKey, TValue> : Dictionary<TKey, TValue>, ISerializationCallbackReceiver
     {
-        this.Clear();
+        [SerializeField]
+        private List<SerializableKeyValuePair<TKey, TValue>> pairs = new List<SerializableKeyValuePair<TKey, TValue>>();
 
-        foreach (var pair in pairs)
+        public void OnBeforeSerialize()
         {
-            if (pair.Key != null && !ContainsKey(pair.Key))
+            pairs.Clear();
+            foreach (KeyValuePair<TKey, TValue> kvp in this)
             {
-                this.Add(pair.Key, pair.Value);
+                pairs.Add(new SerializableKeyValuePair<TKey, TValue>(kvp.Key, kvp.Value));
+            }
+        }
+
+        public void OnAfterDeserialize()
+        {
+            this.Clear();
+
+            foreach (var pair in pairs)
+            {
+                if (pair.Key != null && !ContainsKey(pair.Key))
+                {
+                    this.Add(pair.Key, pair.Value);
+                }
             }
         }
     }

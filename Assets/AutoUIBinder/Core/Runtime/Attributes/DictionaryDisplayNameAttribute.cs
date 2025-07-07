@@ -1,13 +1,16 @@
 using UnityEngine;
 
-/// <summary>
-/// 用于自定义字典在Inspector中的显示名称
-/// </summary>
-public class DictionaryDisplayNameAttribute : PropertyAttribute
+namespace AutoUIBinder
 {
-    public string DisplayName { get; private set; }
-    public DictionaryDisplayNameAttribute(string displayName)
+    /// <summary>
+    /// 用于自定义字典在Inspector中的显示名称
+    /// </summary>
+    public class DictionaryDisplayNameAttribute : PropertyAttribute
     {
-        DisplayName = displayName;
+        public string DisplayName { get; private set; }
+        public DictionaryDisplayNameAttribute(string displayName)
+        {
+            DisplayName = displayName;
+        }
     }
 } 

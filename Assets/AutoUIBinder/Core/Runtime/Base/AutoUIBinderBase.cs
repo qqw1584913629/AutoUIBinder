@@ -1,10 +1,12 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-/// <summary>
-/// 抽象基类：继承此类的GameObject及其子对象将在Hierarchy窗口中显示组件图标
-/// </summary>
-public abstract class AutoUIBinderBase : MonoBehaviour
+namespace AutoUIBinder
+{
+    /// <summary>
+    /// 抽象基类：继承此类的GameObject及其子对象将在Hierarchy窗口中显示组件图标
+    /// </summary>
+    public abstract class AutoUIBinderBase : MonoBehaviour
 {
     // 用于存储组件引用的字典
     [SerializeField]
@@ -35,13 +37,14 @@ public abstract class AutoUIBinderBase : MonoBehaviour
         }
     }
 
-    // 获取指定类型的组件
-    public T GetComponentRef<T>(string key) where T : Component
-    {
-        if (componentRefs.TryGetValue(key, out Component component))
+        // 获取指定类型的组件
+        public T GetComponentRef<T>(string key) where T : Component
         {
-            return component as T;
+            if (componentRefs.TryGetValue(key, out Component component))
+            {
+                return component as T;
+            }
+            return null;
         }
-        return null;
     }
 }

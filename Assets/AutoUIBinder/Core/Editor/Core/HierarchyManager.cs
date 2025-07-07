@@ -126,86 +126,27 @@ namespace AutoUIBinder.Editor
         }
         
         /// <summary>
-        /// 生成节点组件键值
+        /// 生成节点组件键值 (使用ComponentHelper)
         /// </summary>
         public static string GetNodeComponentKey(Component component)
         {
-            if (component == null) return "";
-            
-            string nodeName = component.gameObject.name.Replace(" ", "_");
-            string componentType = component.GetType().Name;
-            return $"{nodeName}_{componentType}";
+            return ComponentHelper.GetNodeComponentKey(component);
         }
         
         /// <summary>
-        /// 查找组件对应的AutoUIBinderBase
+        /// 查找组件对应的AutoUIBinderBase (使用ComponentHelper)
         /// </summary>
         public static AutoUIBinderBase FindIconHandler(Component component)
         {
-            if (component == null) return null;
-            
-            AutoUIBinderBase iconHandler = null;
-            bool isAutoUIBinderBase = component is AutoUIBinderBase;
-            
-            if (isAutoUIBinderBase)
-            {
-                var parent = component.gameObject.transform.parent;
-                while (parent != null)
-                {
-                    iconHandler = parent.GetComponent<AutoUIBinderBase>();
-                    if (iconHandler != null)
-                        break;
-                    parent = parent.parent;
-                }
-            }
-            else
-            {
-                iconHandler = component.gameObject.GetComponent<AutoUIBinderBase>();
-                if (iconHandler == null)
-                {
-                    var parent = component.transform.parent;
-                    while (parent != null)
-                    {
-                        iconHandler = parent.GetComponent<AutoUIBinderBase>();
-                        if (iconHandler != null)
-                            break;
-                        parent = parent.parent;
-                    }
-                }
-            }
-            
-            return iconHandler;
+            return ComponentHelper.FindIconHandler(component);
         }
         
         /// <summary>
-        /// 获取唯一节点名称
+        /// 获取唯一节点名称 (使用ComponentHelper)
         /// </summary>
         public static string GetUniqueNodeName(AutoUIBinderBase handler, string originalName)
         {
-            if (handler == null || string.IsNullOrEmpty(originalName)) return originalName;
-            
-            var usedNames = new HashSet<string>();
-            foreach (var kvp in handler.ComponentRefs)
-            {
-                if (kvp.Value != null)
-                {
-                    usedNames.Add(kvp.Value.gameObject.name);
-                }
-            }
-            
-            if (!usedNames.Contains(originalName))
-                return originalName;
-            
-            int counter = 1;
-            string uniqueName;
-            do
-            {
-                uniqueName = $"{originalName}_{counter}";
-                counter++;
-            } 
-            while (usedNames.Contains(uniqueName) && counter < 100);
-            
-            return uniqueName;
+            return ComponentHelper.GetUniqueNodeName(handler, originalName);
         }
         
         private static string GetHandlerUniqueKey(AutoUIBinderBase handler)

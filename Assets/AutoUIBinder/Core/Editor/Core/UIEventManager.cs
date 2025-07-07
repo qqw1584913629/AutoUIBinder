@@ -40,15 +40,7 @@ namespace AutoUIBinder.Editor
             
             private static string GetFriendlyTypeName(System.Type type)
             {
-                using (var provider = new Microsoft.CSharp.CSharpCodeProvider())
-                {
-                    var typeReference = new System.CodeDom.CodeTypeReference(type);
-                    string typeName = provider.GetTypeOutput(typeReference);
-                    int lastDot = typeName.LastIndexOf('.');
-                    if (lastDot >= 0)
-                        typeName = typeName.Substring(lastDot + 1);
-                    return typeName;
-                }
+                return ReflectionCache.GetFriendlyTypeName(type);
             }
         }
         
@@ -187,8 +179,8 @@ namespace AutoUIBinder.Editor
             var events = new List<EventInfo>();
             var type = component.GetType();
 
-            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                .Where(f => typeof(UnityEngine.Events.UnityEventBase).IsAssignableFrom(f.FieldType));
+            // 使用缓存的UnityEvent字段
+            var fields = ReflectionCache.GetUnityEventFields(type);
 
             foreach (var field in fields)
             {
@@ -216,17 +208,12 @@ namespace AutoUIBinder.Editor
                     }
                 }
 
-                bool isSerializable = field.IsPublic || field.GetCustomAttribute<SerializeField>() != null;
-                
-                if (isSerializable)
+                events.Add(new EventInfo
                 {
-                    events.Add(new EventInfo
-                    {
-                        Name = field.Name,
-                        EventType = eventType,
-                        ParameterType = parameterType
-                    });
-                }
+                    Name = field.Name,
+                    EventType = eventType,
+                    ParameterType = parameterType
+                });
             }
 
             return events.OrderBy(e => e.Name).ToArray();
@@ -234,11 +221,10 @@ namespace AutoUIBinder.Editor
         
         private bool IsEventBound(AutoUIBinderBase target, string componentName, string eventName)
         {
-            var methods = target.GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            foreach (var method in methods)
+            var eventMethods = ReflectionCache.GetEventMethods(target.GetType());
+            foreach (var method in eventMethods)
             {
-                var attr = method.GetCustomAttribute<UIEventAttribute>();
-                if (attr != null && attr.ComponentName == componentName && attr.EventType == eventName)
+                if (ReflectionCache.IsEventMethod(method, componentName, eventName))
                 {
                     return true;
                 }
@@ -248,8 +234,8 @@ namespace AutoUIBinder.Editor
         
         private bool DoesMethodExist(AutoUIBinderBase target, string methodName)
         {
-            var methods = target.GetType().GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-            return methods.Any(m => m.Name == methodName && m.GetCustomAttribute<UIEventAttribute>() != null);
+            var eventMethods = ReflectionCache.GetEventMethods(target.GetType());
+            return eventMethods.Any(m => ReflectionCache.IsMethodNameMatch(m, methodName));
         }
         
         private string GetMethodName(string componentName, string eventName)

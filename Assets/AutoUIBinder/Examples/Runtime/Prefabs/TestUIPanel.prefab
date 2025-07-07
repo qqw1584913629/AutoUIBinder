@@ -491,14 +491,6 @@ MonoBehaviour:
     pairs:
     - Key: Button_Close_Button
       Value: {fileID: 2172029228860734909}
-    - Key: Slider_Slider
-      Value: {fileID: 2429902769099515313}
-    - Key: Toggle_Toggle
-      Value: {fileID: 6361927117384214160}
-    - Key: Toggle_1_Toggle
-      Value: {fileID: 808708346162779296}
-    - Key: Toggle_2_Toggle
-      Value: {fileID: 9217736111452636727}
     - Key: InputField_Legacy_InputField
       Value: {fileID: 1969948658979344519}
     - Key: GameObject_ToggleGroup

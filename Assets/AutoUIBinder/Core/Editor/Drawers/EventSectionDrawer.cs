@@ -82,6 +82,27 @@ namespace AutoUIBinder.Editor
             
             GUILayout.FlexibleSpace();
             
+            GUI.backgroundColor = new Color(1.0f, 0.8f, 0.4f);
+            if (GUILayout.Button("清理无效", GUILayout.Height(25)))
+            {
+                if (EditorUtility.DisplayDialog("清理确认", 
+                    "确定要清理无效的事件方法吗？\n\n这将删除那些组件已解绑但方法还存在的事件方法。\n\n建议在清理前备份代码。", 
+                    "确定清理", "取消"))
+                {
+                    int removed = codeGenerator.CleanupInvalidEventMethods(target);
+                    if (removed > 0)
+                    {
+                        EditorUtility.DisplayDialog("清理完成", $"成功清理了 {removed} 个无效的事件方法", "确定");
+                        eventManager.RefreshEventBindings(target);
+                    }
+                    else
+                    {
+                        EditorUtility.DisplayDialog("清理完成", "没有发现需要清理的无效事件方法", "确定");
+                    }
+                }
+            }
+            GUI.backgroundColor = Color.white;
+            
             GUI.backgroundColor = new Color(0.8f, 0.4f, 0.4f);
             if (GUILayout.Button("清空事件", GUILayout.Height(25)))
             {

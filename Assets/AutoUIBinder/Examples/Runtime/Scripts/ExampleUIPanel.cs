@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using AutoUIBinder;
 
 /// <summary>
 /// AutoUIBinder使用示例 - 展示基本的UI面板实现
@@ -10,9 +11,18 @@ public partial class ExampleUIPanel : AutoUIBinderBase
     {
     }
 
-    [UIEvent("Toggle_2_Toggle", "onValueChanged")]
-    private void OnToggle_2_ToggleonValueChanged(bool value)
+    [UIEvent("Button_Close_Button", "onClick")]
+    private void OnButton_Close_ButtonClick()
     {
         
     }
+
+    [UIEvent("InputField_Legacy_InputField", "onSubmit")]
+    private void OnInputField_Legacy_InputFieldSubmit(string value)
+    {
+        
+    }
+
+
+
 }
