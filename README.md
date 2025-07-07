@@ -1,62 +1,108 @@
 <h1 align="center">✨ AutoUIBinder</h1>
 <p align="center">
+    <strong>🚀 The Ultimate Unity UI Development Tool</strong>
+</p>
+<p align="center">
     <a href="README.md">English</a> •
     <a href="README_CN.md">中文</a>
 </p>
 
 ---
 
-AutoUIBinder is a powerful Unity editor extension designed to simplify UI development workflow, providing visual component binding and automatic code generation capabilities.
+> **Stop writing repetitive UI binding code!** AutoUIBinder revolutionizes Unity UI development with visual component binding and automatic code generation.
 
-## ✨ Features
+## 🎯 Why AutoUIBinder?
 
-- **Visual Component Binding** - Click component icons in the Hierarchy window to bind UI elements
-- **Automatic Code Generation** - One-click to generate component reference code
-- **Smart Naming Conflict Resolution** - Automatically detect and handle duplicate names
-- **Prefab Edit Support** - Optimized for prefab editing mode
-- **Performance Optimized** - Efficient redraw mechanism, no impact on editor performance
+**Before AutoUIBinder:**
+```csharp
+// Manual binding - tedious and error-prone
+public Button startButton;
+public Text titleText;
+public Image backgroundImage;
+// ... and many more
 
-## 🚀 Quick Start
+void Awake() {
+    startButton = transform.Find("Button_Start").GetComponent<Button>();
+    titleText = transform.Find("Text_Title").GetComponent<Text>();
+    backgroundImage = transform.Find("Image_Background").GetComponent<Image>();
+    // ... manual binding for every component
+}
+```
+
+**After AutoUIBinder:**
+```csharp
+// Just inherit and click - that's it!
+public partial class MyUIPanel : AutoUIBinderBase 
+{
+    void Start() {
+        // All components auto-generated and ready to use
+        Button_Start.onClick.AddListener(OnStartClick);
+        Text_Title.text = "Welcome!";
+    }
+}
+```
+
+## ✨ Key Features
+
+🎨 **Visual Binding** - Click component icons in Hierarchy to bind instantly  
+⚡ **One-Click Generation** - Generate all component references automatically  
+🧠 **Smart Naming** - Handles conflicts and invalid characters intelligently  
+🎯 **Event Binding** - Auto-connect UI events to your methods  
+🔧 **Zero Configuration** - Works out of the box with sensible defaults
+
+## 🚀 Quick Start (5 Minutes)
 
 ### Requirements
+- Unity 2021.3.39f1c1+ 
+- Any Unity UI system (UGUI, TextMeshPro)
 
-- Unity 2021.3.39f1c1 or higher
-- Supports all Unity built-in UI systems (UGUI)
+### 3 Steps to Success
 
-### Basic Usage
+#### 1️⃣ Create Your UI Script
+```csharp
+public class MainMenuPanel : AutoUIBinderBase 
+{
+    // That's it! No manual component declarations needed
+}
+```
 
-1. **Create UI Script**
-   ```csharp
-   using UnityEngine;
-   
-   public class MyUIPanel : AutoUIBinderBase
-   {
-       void Start()
-       {
-           // Your initialization code
-       }
-   }
-   ```
+#### 2️⃣ Visual Binding
+- Attach script to your prefab root
+- Enter prefab edit mode  
+- **Click the component icons** in Hierarchy - they'll highlight when bound!
+- Real-time visual feedback
 
-2. **Bind Components**
-   - Add the script to the root object of your prefab
-   - Enter prefab edit mode
-   - Click component icons to bind (will be highlighted)
-   - Click again to unbind
+#### 3️⃣ Generate & Use
+```csharp
+// Click "🚀 Generate UI Code" in Inspector
+// Then use your components immediately:
 
-3. **Generate Code**
-   - Click "Generate UI" button in Inspector
-   - Code will be generated to the configured path
+void Start() {
+    Button_Play.onClick.AddListener(() => StartGame());
+    Text_PlayerName.text = PlayerPrefs.GetString("name");
+    Slider_Volume.value = AudioListener.volume;
+}
+```
 
-4. **Use Generated Code**
-   ```csharp
-   void Start()
-   {
-       // Auto-generated properties can be used directly
-       Button_Start.onClick.AddListener(OnStartClick);
-       Text_Title.text = "Welcome to AutoUIBinder";
-   }
-   ```
+## 🎯 Event Binding Made Easy
+
+**NEW: Automatic Event Binding!**
+```csharp
+public class GamePanel : AutoUIBinderBase 
+{
+    [UIEvent] // 🔥 Magic happens here
+    void OnPlayButtonClick() {
+        // Auto-connects to Button_Play.onClick
+        StartGame();
+    }
+    
+    [UIEvent]
+    void OnVolumeSliderChanged(float value) {
+        // Auto-connects to Slider_Volume.onValueChanged
+        AudioListener.volume = value;
+    }
+}
+```
 
 ## 📁 Project Structure
 
@@ -138,63 +184,23 @@ The tool automatically handles:
 - **File Backup** - Auto-creates backup before overwriting
 - **Exception Recovery** - Auto-recovers binding state after editor restart
 
-## 🐛 Troubleshooting
+## 🤝 Contributing
 
-### Common Issues
-
-**Q: Path error when generating code**
-A: Check path settings in GlobalConfig, ensure directory exists and has write permission
-
-**Q: Can't see icons in prefab edit mode**
-A: Ensure prefab root or child objects have AutoUIBinderBase component
-
-**Q: Bound components are null in code**
-A: Make sure prefab is saved and project is recompiled after code generation
-
-**Q: Hierarchy window performance lag**
-A: Tool is optimized for performance, check for plugin conflicts if issues persist
-
-### Debug Information
-
-Tool provides detailed logs with `[AutoUIBinder]` prefix:
-
-- **Info Level** - Normal operation records
-- **Warning Level** - Potential issue alerts
-- **Error Level** - Error details and stack traces
-
-## 📈 Best Practices
-
-### Recommended Project Structure
-
-```
-Scripts/
-├── UI/                        # UI related scripts
-│   ├── Panels/               # Panel scripts
-│   │   ├── MainMenuPanel.cs
-│   │   └── SettingsPanel.cs
-│   └── Gen/                  # Generated code directory
-│       ├── MainMenuPanel/
-│       └── SettingsPanel/
-├── Gameplay/                 # Game logic
-└── Common/                   # Common components
-```
-
-### Naming Conventions
-
-- **Prefab Names** - Use PascalCase, like `MainMenuPanel`
-- **Node Names** - Use meaningful names, like `Button_Start`, `Text_Title`
-- **Script Class Names** - Match with prefab names
-
-### Performance Tips
-
-- Avoid binding too many components in a single panel (<50 recommended)
-- Split large UIs into sub-panels
-- Commit to version control after code generation
+**We welcome community contributions**
+- 🐛 Report bugs and suggest features
+- 📝 Improve documentation
+- 🔧 Submit pull requests
+- ⭐ Star the project to show your support
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
-**AutoUIBinder** - Make Unity UI development more efficient!
+<p align="center">
+    <strong>⚡ AutoUIBinder - Making Unity UI Development a Breeze! ⚡</strong>
+</p>
+<p align="center">
+    Made with ❤️ by the AutoUIBinder Team
+</p>
