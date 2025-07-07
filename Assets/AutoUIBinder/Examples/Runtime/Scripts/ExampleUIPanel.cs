@@ -9,11 +9,4 @@ public partial class ExampleUIPanel : AutoUIBinderBase
     public void Start()
     {
     }
-
-
-    [UIEvent("Button_Close_Button", "m_OnClick")]
-    private void OnButton_Close_ButtonClick()
-    {
-        // TODO: 添加事件处理逻辑
-    }
 }

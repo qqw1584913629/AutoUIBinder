@@ -4,19 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.SceneManagement;
-using static UnityEngine.Random;
+using AutoUIBinder.Editor;
 
 namespace AutoUIBinder
 {
     [InitializeOnLoad]
     public class HierarchyComponentIcons
     {
-        // 用于存储组件的高亮状态
-        private static Dictionary<int, bool> highlightedComponents = new Dictionary<int, bool>();
-        
-        // 用于存储每个AutoUIBinderBase的唯一颜色
-        private static Dictionary<int, Color> handlerColors = new Dictionary<int, Color>();
-        
         // 用于存储GameObject的名称，用于检测重命名
         private static Dictionary<int, string> gameObjectNames = new Dictionary<int, string>();
         
@@ -50,10 +44,10 @@ namespace AutoUIBinder
         private static void OnAfterAssemblyReload()
         {
             // 清空当前的高亮状态
-            highlightedComponents.Clear();
+            HierarchyManager.ClearHighlights();
             
             // 清理颜色缓存
-            CleanupHandlerColors();
+            HierarchyManager.CleanupHandlerColors();
 
             // 清理名称缓存
             gameObjectNames.Clear();
@@ -78,7 +72,7 @@ namespace AutoUIBinder
                             if (kvp.Value != null)
                             {
                                 // 恢复组件的高亮状态
-                                highlightedComponents[kvp.Value.GetInstanceID()] = true;
+                                HierarchyManager.SetComponentHighlight(kvp.Value.GetInstanceID(), true);
                             }
                         }
                     }
@@ -92,10 +86,10 @@ namespace AutoUIBinder
         private static void OnPrefabStageOpened(PrefabStage stage)
         {
             // 清空当前的高亮状态
-            highlightedComponents.Clear();
+            HierarchyManager.ClearHighlights();
             
             // 清理颜色缓存
-            CleanupHandlerColors();
+            HierarchyManager.CleanupHandlerColors();
             
             // 清理名称缓存
             gameObjectNames.Clear();
@@ -116,7 +110,7 @@ namespace AutoUIBinder
                     if (kvp.Value != null)
                     {
                         // 恢复组件的高亮状态
-                        highlightedComponents[kvp.Value.GetInstanceID()] = true;
+                        HierarchyManager.SetComponentHighlight(kvp.Value.GetInstanceID(), true);
                     }
                 }
             }
@@ -141,9 +135,9 @@ namespace AutoUIBinder
                 if (comp != null)
                 {
                     int compId = comp.GetInstanceID();
-                    if (highlightedComponents.ContainsKey(compId))
+                    if (HierarchyManager.IsComponentHighlighted(compId))
                     {
-                        highlightedComponents.Remove(compId);
+                        HierarchyManager.SetComponentHighlight(compId, false);
                     }
                 }
             }
@@ -161,7 +155,7 @@ namespace AutoUIBinder
                 Component comp = EditorUtility.InstanceIDToObject(componentID) as Component;
                 if (comp != null)
                 {
-                    AutoUIBinderBase iconHandler = FindIconHandler(comp);
+                    AutoUIBinderBase iconHandler = HierarchyManager.FindIconHandler(comp);
                     if (iconHandler != null)
                     {
                         string tooltipText = $"组件: {comp.GetType().Name}\n属于: {iconHandler.gameObject.name}";
@@ -229,9 +223,9 @@ namespace AutoUIBinder
 
                     if (iconHandler != null)
                     {
-                        string key = GetNodeComponentKey(comp);
+                        string key = HierarchyManager.GetNodeComponentKey(comp);
                         
-                    if (highlightedComponents.ContainsKey(componentID))
+                    if (HierarchyManager.IsComponentHighlighted(componentID))
                     {
                             // 直接从当前handler移除引用
                             if (iconHandler != null)
@@ -240,7 +234,7 @@ namespace AutoUIBinder
                                 EditorUtility.SetDirty(iconHandler.gameObject);
                             }
                             // 移除高亮状态
-                            highlightedComponents.Remove(componentID);
+                            HierarchyManager.SetComponentHighlight(componentID, false);
                         }
                         else
                         {
@@ -290,16 +284,16 @@ namespace AutoUIBinder
                             // 如果有名称冲突，生成新的唯一名称
                             if (hasNameConflict)
                             {
-                                string uniqueName = GetUniqueNodeName(iconHandler, comp.gameObject.name);
+                                string uniqueName = HierarchyManager.GetUniqueNodeName(iconHandler, comp.gameObject.name);
                                 comp.gameObject.name = uniqueName;
-                                key = GetNodeComponentKey(comp);
+                                key = HierarchyManager.GetNodeComponentKey(comp);
                             }
 
                             // 在添加新引用前，清理其他AutoUIBinderBase中的引用
                             CleanupExistingReference(comp, iconHandler);
 
                             // 添加新引用
-                            highlightedComponents[componentID] = true;
+                            HierarchyManager.SetComponentHighlight(componentID, true);
                             iconHandler.AddComponentRef(key, comp);
                         }
 
@@ -314,22 +308,6 @@ namespace AutoUIBinder
             }
         }
 
-        private static string GetNodeComponentKey(Component component)
-        {
-            if (component == null) return "";
-            
-            // 直接使用节点名字
-            string nodeName = component.gameObject.name;
-            
-            // 替换空格为下划线
-            nodeName = nodeName.Replace(" ", "_");
-            
-            // 组合key: 节点名_组件类型
-            string componentType = component.GetType().Name;
-            string key = $"{nodeName}_{componentType}";
-            
-            return key;
-        }
 
         private static string GetFullPath(GameObject obj)
         {
@@ -457,7 +435,7 @@ namespace AutoUIBinder
                 // 如果当前节点有AutoUIBinderBase组件，绘制背景色标识
                 if (baseComponent != null)
                 {
-                    Color handlerColor = GetHandlerColor(baseComponent);
+                    Color handlerColor = HierarchyManager.GetHandlerColor(baseComponent);
                     Color bgColor = new Color(handlerColor.r, handlerColor.g, handlerColor.b, 0.15f);
                     
                     // 绘制节点背景色，稍微缩小一点，避免覆盖选中高亮
@@ -500,7 +478,7 @@ namespace AutoUIBinder
                     HandleMouseEvents(iconRect, componentID, gameObject);
 
                     // 如果组件被高亮，使用其关联的AutoUIBinderBase的颜色绘制高亮背景
-                    if (highlightedComponents.ContainsKey(componentID) && highlightedComponents[componentID])
+                    if (HierarchyManager.IsComponentHighlighted(componentID))
                     {
                         // 查找该组件关联的AutoUIBinderBase
                         AutoUIBinderBase handler = null;
@@ -537,7 +515,7 @@ namespace AutoUIBinder
             if (content.image != null)
             {
                 // 获取该组件关联的AutoUIBinderBase
-                AutoUIBinderBase iconHandler = FindIconHandler(component);
+                AutoUIBinderBase iconHandler = HierarchyManager.FindIconHandler(component);
 
                 // 绘制组件图标
                 GUI.DrawTexture(rect, content.image);
@@ -545,7 +523,7 @@ namespace AutoUIBinder
                 // 如果找到了AutoUIBinderBase，绘制层级指示器
                 if (iconHandler != null)
                 {
-                    string key = GetNodeComponentKey(component);
+                    string key = HierarchyManager.GetNodeComponentKey(component);
                     bool isReferenced = false;
 
                     // 检查是否在当前handler中被引用
@@ -560,7 +538,7 @@ namespace AutoUIBinder
                     }
                     
                     // 获取handler的专属颜色
-                    Color handlerColor = GetHandlerColor(iconHandler);
+                    Color handlerColor = HierarchyManager.GetHandlerColor(iconHandler);
 
                     if (isReferenced)
                     {
@@ -583,7 +561,7 @@ namespace AutoUIBinder
                         Color bgColor = new Color(handlerColor.r, handlerColor.g, handlerColor.b, 0.1f);
                         EditorGUI.DrawRect(rect, bgColor);
                     }
-                    else if (highlightedComponents.ContainsKey(component.GetInstanceID()))
+                    else if (HierarchyManager.IsComponentHighlighted(component.GetInstanceID()))
                     {
                         // 检查是否是真正需要高亮的组件
                         bool shouldHighlight = false;
@@ -606,7 +584,7 @@ namespace AutoUIBinder
                         if (!shouldHighlight)
                         {
                             // 如果不应该高亮，移除高亮状态
-                            highlightedComponents.Remove(component.GetInstanceID());
+                            HierarchyManager.SetComponentHighlight(component.GetInstanceID(), false);
                         }
                         else
                         {
@@ -631,7 +609,7 @@ namespace AutoUIBinder
 
             // 查找所有AutoUIBinderBase
             var allHandlers = stage.prefabContentsRoot.GetComponentsInChildren<AutoUIBinderBase>(true);
-            string key = GetNodeComponentKey(comp);
+            string key = HierarchyManager.GetNodeComponentKey(comp);
 
             foreach (var handler in allHandlers)
             {
@@ -652,85 +630,11 @@ namespace AutoUIBinder
             var stage = PrefabStageUtility.GetCurrentPrefabStage();
             if (stage == null || stage.prefabContentsRoot == null) return;
 
-
             // 获取所有AutoUIBinderBase组件
             var allHandlers = stage.prefabContentsRoot.GetComponentsInChildren<AutoUIBinderBase>(true);
             
-            // 检查所有高亮组件
-            var highlightedToRemove = new List<int>();
-            foreach (var kvp in highlightedComponents)
-            {
-                Component comp = EditorUtility.InstanceIDToObject(kvp.Key) as Component;
-                if (comp == null)
-                {
-                    highlightedToRemove.Add(kvp.Key);
-                    continue;
-                }
-
-                // 找到最近的AutoUIBinderBase父级
-                AutoUIBinderBase nearestHandler = null;
-                Transform current = comp.transform;
-                while (current != null)
-                {
-                    var handler = current.GetComponent<AutoUIBinderBase>();
-                    if (handler != null)
-                    {
-                        nearestHandler = handler;
-                        break;
-                    }
-                    current = current.parent;
-                }
-
-                if (nearestHandler != null)
-                {
-                    string key = GetNodeComponentKey(comp);
-                    
-                    // 区分AutoUIBinderBase和普通组件的处理
-                    if (comp is AutoUIBinderBase)
-                    {
-                        // 对于AutoUIBinderBase，检查是否在父级handler的引用列表中
-                        Transform parent = comp.gameObject.transform.parent;
-                        bool foundInParentHandler = false;
-                        
-                        while (parent != null)
-                        {
-                            var parentHandler = parent.GetComponent<AutoUIBinderBase>();
-                            if (parentHandler != null)
-                            {
-                                if (parentHandler.ComponentRefs.ContainsKey(key) && parentHandler.ComponentRefs[key] == comp)
-                                {
-                                    foundInParentHandler = true;
-                                }
-                                break; // 找到第一个父级handler就停止
-                            }
-                            parent = parent.parent;
-                        }
-                        
-                        if (!foundInParentHandler)
-                        {
-                            highlightedToRemove.Add(kvp.Key);
-                        }
-                    }
-                    else
-                    {
-                        // 对于普通组件，检查是否在最近handler的引用列表中
-                        if (!nearestHandler.ComponentRefs.ContainsKey(key))
-                        {
-                            highlightedToRemove.Add(kvp.Key);
-                        }
-                    }
-                }
-                else
-                {
-                    highlightedToRemove.Add(kvp.Key);
-                }
-            }
-
-            // 移除无效的高亮状态
-            foreach (var id in highlightedToRemove)
-            {
-                highlightedComponents.Remove(id);
-            }
+            // 使用HierarchyManager验证和清理高亮组件
+            HierarchyManager.ValidateAndCleanupHighlights();
             
             foreach (var handler in allHandlers)
             {
@@ -740,11 +644,8 @@ namespace AutoUIBinder
             // 清理孤儿组件（失去父级AutoUIBinderBase的组件）
             CleanupOrphanComponents(stage.prefabContentsRoot);
             
-            // 如果有任何清理操作，刷新界面
-            if (highlightedToRemove.Count > 0)
-            {
-                RequestRepaint();
-            }
+            // 刷新界面
+            RequestRepaint();
         }
 
         private static void ValidateComponentReferences(AutoUIBinderBase handler)
@@ -796,9 +697,9 @@ namespace AutoUIBinder
                 if (component != null)
                 {
                     int compId = component.GetInstanceID();
-                    if (highlightedComponents.ContainsKey(compId))
+                    if (HierarchyManager.IsComponentHighlighted(compId))
                     {
-                        highlightedComponents.Remove(compId);
+                        HierarchyManager.SetComponentHighlight(compId, false);
                     }
                 }
             }
@@ -819,9 +720,9 @@ namespace AutoUIBinder
             var componentsToUnhighlight = new List<int>();
             
             // 检查所有当前高亮的组件
-            foreach (var kvp in highlightedComponents.ToList())
+            var highlightedIds = HierarchyManager.GetHighlightedComponentIds();
+            foreach (var componentID in highlightedIds)
             {
-                int componentID = kvp.Key;
                 Component comp = EditorUtility.InstanceIDToObject(componentID) as Component;
                 
                 
@@ -833,7 +734,7 @@ namespace AutoUIBinder
                 }
                 
                 // 检查该组件是否还有有效的父级AutoUIBinderBase
-                AutoUIBinderBase iconHandler = FindIconHandler(comp);
+                AutoUIBinderBase iconHandler = HierarchyManager.FindIconHandler(comp);
                 
                 if (iconHandler == null)
                 {
@@ -845,7 +746,7 @@ namespace AutoUIBinder
             // 移除孤儿组件的高亮状态
             foreach (var componentID in componentsToUnhighlight)
             {
-                highlightedComponents.Remove(componentID);
+                HierarchyManager.SetComponentHighlight(componentID, false);
             }
             
             // 如果有组件被清理，刷新界面
@@ -855,143 +756,6 @@ namespace AutoUIBinder
             }
         }
 
-        
-        // 获取唯一的节点名称
-        private static string GetUniqueNodeName(AutoUIBinderBase handler, string originalName)
-        {
-            if (handler == null || string.IsNullOrEmpty(originalName)) return originalName;
-            
-            // 收集所有已使用的节点名称
-            var usedNames = new HashSet<string>();
-            foreach (var kvp in handler.ComponentRefs)
-            {
-                if (kvp.Value != null)
-                {
-                    usedNames.Add(kvp.Value.gameObject.name);
-                }
-            }
-            
-            // 如果原名称没有被使用，直接返回
-            if (!usedNames.Contains(originalName))
-                return originalName;
-            
-            // 如果名称已被使用，生成新的名称
-            int counter = 1;
-            string uniqueName;
-            do
-            {
-                uniqueName = $"{originalName}_{counter}";
-                counter++;
-            } 
-            while (usedNames.Contains(uniqueName) && counter < 100); // 防止无限循环
-            
-            return uniqueName;
-        }
-        
-        // 为AutoUIBinderBase生成唯一颜色
-        private static Color GetHandlerColor(AutoUIBinderBase handler)
-        {
-            if (handler == null) return Color.white;
-            
-            int handlerID = handler.GetInstanceID();
-            if (!handlerColors.ContainsKey(handlerID))
-            {
-                // 生成基于handler名称和路径的稳定颜色
-                string uniqueKey = GetHandlerUniqueKey(handler);
-                int hash = uniqueKey.GetHashCode();
-                
-                // 使用System.Random确保稳定性
-                System.Random random = new System.Random(hash);
-                
-                // 生成饱和度和亮度较高的颜色，确保可见性
-                float hue = (float)random.NextDouble();
-                float saturation = 0.6f + (float)random.NextDouble() * 0.3f; // 0.6-0.9
-                float value = 0.7f + (float)random.NextDouble() * 0.2f; // 0.7-0.9
-                
-                Color color = Color.HSVToRGB(hue, saturation, value);
-                handlerColors[handlerID] = color;
-            }
-            
-            return handlerColors[handlerID];
-        }
-        
-        // 生成handler的唯一标识符
-        private static string GetHandlerUniqueKey(AutoUIBinderBase handler)
-        {
-            if (handler == null) return "";
-            
-            // 使用Transform路径和名称组合确保唯一性
-            string path = "";
-            Transform current = handler.transform;
-            while (current != null)
-            {
-                path = current.name + "/" + path;
-                current = current.parent;
-            }
-            
-            return path + handler.GetType().Name;
-        }
-        
-        // 查找组件对应的AutoUIBinderBase
-        private static AutoUIBinderBase FindIconHandler(Component component)
-        {
-            if (component == null) return null;
-            
-            AutoUIBinderBase iconHandler = null;
-            
-            // 检查当前组件是否是AutoUIBinderBase
-            bool isAutoUIBinderBase = component is AutoUIBinderBase;
-            
-            if (isAutoUIBinderBase)
-            {
-                // 如果是AutoUIBinderBase，查找最近的父级AutoUIBinderBase
-                var parent = component.gameObject.transform.parent;
-                while (parent != null)
-                {
-                    iconHandler = parent.GetComponent<AutoUIBinderBase>();
-                    if (iconHandler != null)
-                        break;
-                    parent = parent.parent;
-                }
-            }
-            else
-            {
-                // 如果不是AutoUIBinderBase，先查找自身，然后查找最近的父级
-                iconHandler = component.gameObject.GetComponent<AutoUIBinderBase>();
-                if (iconHandler == null)
-                {
-                    var parent = component.transform.parent;
-                    while (parent != null)
-                    {
-                        iconHandler = parent.GetComponent<AutoUIBinderBase>();
-                        if (iconHandler != null)
-                            break;
-                        parent = parent.parent;
-                    }
-                }
-            }
-            
-            return iconHandler;
-        }
-        
-        // 清理已删除handler的颜色缓存
-        private static void CleanupHandlerColors()
-        {
-            var keysToRemove = new List<int>();
-            foreach (var kvp in handlerColors)
-            {
-                var handler = EditorUtility.InstanceIDToObject(kvp.Key) as AutoUIBinderBase;
-                if (handler == null)
-                {
-                    keysToRemove.Add(kvp.Key);
-                }
-            }
-            
-            foreach (var key in keysToRemove)
-            {
-                handlerColors.Remove(key);
-            }
-        }
 
         private static void HandleObjectRename(GameObject renamedObject, string oldName)
         {
@@ -1005,18 +769,7 @@ namespace AutoUIBinder
                 if (component == null) continue;
 
                 // 找到最近的AutoUIBinderBase父级
-                AutoUIBinderBase nearestHandler = null;
-                Transform current = component.transform;
-                while (current != null)
-                {
-                    var handler = current.GetComponent<AutoUIBinderBase>();
-                    if (handler != null)
-                    {
-                        nearestHandler = handler;
-                        break;
-                    }
-                    current = current.parent;
-                }
+                AutoUIBinderBase nearestHandler = HierarchyManager.FindIconHandler(component);
 
                 if (nearestHandler != null)
                 {
@@ -1036,13 +789,13 @@ namespace AutoUIBinder
                     // 如果有名称冲突，生成新的唯一名称
                     if (hasNameConflict)
                     {
-                        string uniqueName = GetUniqueNodeName(nearestHandler, renamedObject.name);
+                        string uniqueName = HierarchyManager.GetUniqueNodeName(nearestHandler, renamedObject.name);
                         renamedObject.name = uniqueName;
                     }
                     
                     // 构造旧的key和新的key
                     string oldKey = $"{oldName.Replace(" ", "_")}_{component.GetType().Name}";
-                    string newKey = GetNodeComponentKey(component);
+                    string newKey = HierarchyManager.GetNodeComponentKey(component);
                     // 检查是否存在旧引用
                     if (nearestHandler.ComponentRefs.ContainsKey(oldKey))
                     {
@@ -1054,7 +807,7 @@ namespace AutoUIBinder
 
                             // 确保高亮状态保持
                             int componentId = component.GetInstanceID();
-                            highlightedComponents[componentId] = true;
+                            HierarchyManager.SetComponentHighlight(componentId, true);
 
                             EditorUtility.SetDirty(nearestHandler.gameObject);
                         }
