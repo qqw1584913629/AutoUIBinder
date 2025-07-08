@@ -97,3 +97,15 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Cursor IDE files
+.cursor/
+*.cursor-*
+.cursorrules
+cursor.log
+
+# Claude Code files
+.claude/
+claude.md
+CLAUDE.md
+*.claude-*
