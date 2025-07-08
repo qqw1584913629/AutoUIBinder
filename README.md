@@ -40,41 +40,7 @@ public partial class MyUIPanel : AutoUIBinderBase
 }
 ```
 
-## See It in Action
-
-### Visual Component Binding
-![Visual Component Binding](docs/images/UIComponentNodeBind.gif)
-*Click component icons in Hierarchy to bind them instantly - see the visual feedback in real-time!*
-
-**Generated Code:**
-![Generated Code](docs/images/ExampleUIPanelGen.png)
-*Comprehensive component references and bindings generated automatically*
-![Generated Code](docs/images/GetUIComponent.png)
-*Component instances retrieved via dictionary, maintaining O(1) efficiency*
-
-### Automatic Event Binding
-![Event Binding](docs/images/UIComponentEventBind.gif)
-*AutoUIBinder automatically connects UI events to your methods based on naming conventions*
-
-**Generated Code:**
-![Original Script](docs/images/ExampleUIPanel.png)
-*Simple, clean code focused on your game logic*
-
-## User Interface
-
-## Key Features
-
-- **Visual Binding** - Click component icons in Hierarchy to bind instantly  
-- **One-Click Generation** - Generate all component references automatically  
-- **Smart Naming** - Handles conflicts and invalid characters intelligently  
-- **Event Binding** - Auto-connect UI events to your methods  
-- **Zero Configuration** - Works out of the box with sensible defaults
-
 ## Quick Start (5 Minutes)
-
-### Requirements
-- Unity 2021.3.39f1c1+ 
-- Any Unity UI system (UGUI, TextMeshPro)
 
 ### 3 Steps to Success
 
@@ -105,9 +71,7 @@ void Start() {
 ```
 
 ## Event Binding
-
 If you don't want to use the ```Button_Play.onClick.AddListener(() => StartGame());``` approach, you can use the tool's event binding feature.
-
 ```csharp
 public class GamePanel : AutoUIBinderBase 
 {
@@ -126,6 +90,46 @@ public class GamePanel : AutoUIBinderBase
     }
 }
 ```
+## Visual Demonstration
+
+### Visual Component Binding
+![Visual Component Binding](docs/images/UIComponentNodeBind.gif)
+<p>
+Click component icons in Hierarchy to bind them instantly - see the visual feedback in real-time!
+</p>
+
+**Generated Code:**
+![Generated Code](docs/images/ExampleUIPanelGen.png)
+<p>
+Comprehensive component references and bindings generated automatically
+</p>
+
+![Generated Code](docs/images/GetUIComponent.png)
+<p>
+Component instances retrieved via dictionary, maintaining O(1) efficiency
+</p>
+
+### Automatic Event Binding
+![Event Binding](docs/images/UIComponentEventBind.gif)
+<p>
+AutoUIBinder automatically connects UI events to your methods based on naming conventions
+</p>
+
+**Generated Code:**
+![Original Script](docs/images/ExampleUIPanel.png)
+<p>
+Simple, clean code focused on your game logic
+</p>
+
+## User Interface
+
+## Key Features
+
+- **Visual Binding** - Click component icons in Hierarchy to bind instantly  
+- **One-Click Generation** - Generate all component references automatically  
+- **Smart Naming** - Handles conflicts and invalid characters intelligently  
+- **Event Binding** - Auto-connect UI events to your methods  
+- **Zero Configuration** - Works out of the box with sensible defaults
 
 ## Project Structure
 
@@ -233,7 +237,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 <p align="center">
     <strong>AutoUIBinder - Making Unity UI Development a Breeze!</strong>
-</p>
-<p align="center">
-    Made with love by the AutoUIBinder Team
 </p>
