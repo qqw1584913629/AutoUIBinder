@@ -1,6 +1,6 @@
-<h1 align="center">✨ AutoUIBinder</h1>
+<h1 align="center">AutoUIBinder</h1>
 <p align="center">
-    <strong>🚀 The Ultimate Unity UI Development Tool</strong>
+    <strong>The Ultimate Unity UI Development Tool</strong>
 </p>
 <p align="center">
     <a href="README.md">English</a> •
@@ -11,27 +11,25 @@
 
 > **Stop writing repetitive UI binding code!** AutoUIBinder revolutionizes Unity UI development with visual component binding and automatic code generation.
 
-## 🎯 Why AutoUIBinder?
+## What You'll Get
 
-**Before AutoUIBinder:**
+**Transform your UI development workflow from this:**
 ```csharp
 // Manual binding - tedious and error-prone
 public Button startButton;
 public Text titleText;
 public Image backgroundImage;
-// ... and many more
 
 void Awake() {
     startButton = transform.Find("Button_Start").GetComponent<Button>();
     titleText = transform.Find("Text_Title").GetComponent<Text>();
-    backgroundImage = transform.Find("Image_Background").GetComponent<Image>();
     // ... manual binding for every component
 }
 ```
 
-**After AutoUIBinder:**
+**To this simple workflow:**
 ```csharp
-// Just inherit and click - that's it!
+// Just inherit and generate - that's it!
 public partial class MyUIPanel : AutoUIBinderBase 
 {
     void Start() {
@@ -42,15 +40,37 @@ public partial class MyUIPanel : AutoUIBinderBase
 }
 ```
 
-## ✨ Key Features
+## See It in Action
 
-🎨 **Visual Binding** - Click component icons in Hierarchy to bind instantly  
-⚡ **One-Click Generation** - Generate all component references automatically  
-🧠 **Smart Naming** - Handles conflicts and invalid characters intelligently  
-🎯 **Event Binding** - Auto-connect UI events to your methods  
-🔧 **Zero Configuration** - Works out of the box with sensible defaults
+### Visual Component Binding
+![Visual Component Binding](docs/images/UIComponentNodeBind.gif)
+*Click component icons in Hierarchy to bind them instantly - see the visual feedback in real-time!*
 
-## 🚀 Quick Start (5 Minutes)
+**Generated Code:**
+![Generated Code](docs/images/ExampleUIPanelGen.png)
+*Comprehensive component references and bindings generated automatically*
+![Generated Code](docs/images/GetUIComponent.png)
+*Component instances retrieved via dictionary, maintaining O(1) efficiency*
+
+### Automatic Event Binding
+![Event Binding](docs/images/UIComponentEventBind.gif)
+*AutoUIBinder automatically connects UI events to your methods based on naming conventions*
+
+**Generated Code:**
+![Original Script](docs/images/ExampleUIPanel.png)
+*Simple, clean code focused on your game logic*
+
+## User Interface
+
+## Key Features
+
+- **Visual Binding** - Click component icons in Hierarchy to bind instantly  
+- **One-Click Generation** - Generate all component references automatically  
+- **Smart Naming** - Handles conflicts and invalid characters intelligently  
+- **Event Binding** - Auto-connect UI events to your methods  
+- **Zero Configuration** - Works out of the box with sensible defaults
+
+## Quick Start (5 Minutes)
 
 ### Requirements
 - Unity 2021.3.39f1c1+ 
@@ -58,7 +78,7 @@ public partial class MyUIPanel : AutoUIBinderBase
 
 ### 3 Steps to Success
 
-#### 1️⃣ Create Your UI Script
+#### 1. Create Your UI Script
 ```csharp
 public class MainMenuPanel : AutoUIBinderBase 
 {
@@ -66,15 +86,15 @@ public class MainMenuPanel : AutoUIBinderBase
 }
 ```
 
-#### 2️⃣ Visual Binding
+#### 2. Visual Binding
 - Attach script to your prefab root
 - Enter prefab edit mode  
 - **Click the component icons** in Hierarchy - they'll highlight when bound!
-- Real-time visual feedback
+- Real-time visual feedback shows binding status
 
-#### 3️⃣ Generate & Use
+#### 3. Generate & Use
 ```csharp
-// Click "🚀 Generate UI Code" in Inspector
+// Click "Generate UI Code" in Inspector
 // Then use your components immediately:
 
 void Start() {
@@ -84,27 +104,30 @@ void Start() {
 }
 ```
 
-## 🎯 Event Binding Made Easy
+## Event Binding
 
-**NEW: Automatic Event Binding!**
+If you don't want to use the ```Button_Play.onClick.AddListener(() => StartGame());``` approach, you can use the tool's event binding feature.
+
 ```csharp
 public class GamePanel : AutoUIBinderBase 
 {
-    [UIEvent] // 🔥 Magic happens here
-    void OnPlayButtonClick() {
-        // Auto-connects to Button_Play.onClick
+    [UIEvent("xxxxxxx", "xxxxx")]
+    private void OnStartButtonClick()
+    {
+        // Automatically binds to Button_Start click event
         StartGame();
     }
-    
-    [UIEvent]
-    void OnVolumeSliderChanged(float value) {
-        // Auto-connects to Slider_Volume.onValueChanged
+
+    [UIEvent("xxxxxxx", "xxxxxx")]
+    private void OnVolumeSliderChanged(float value)
+    {
+        // Automatically binds to Slider_Volume value change
         AudioListener.volume = value;
     }
 }
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Assets/
@@ -119,17 +142,13 @@ Assets/
 │   │       ├── Core/          # Core editor functionality
 │   │       └── Drawers/       # Custom drawers
 │   └── Examples/               # Example code
-│       ├── Runtime/            # Runtime examples
-│       │   ├── Prefabs/       # Example prefabs
-│       │   └── Scripts/       # Example scripts
-│       └── Scenes/            # Example scenes
-├── Scripts/                    # Project scripts
-│   └── Gen/                   # Generated code
+├── Scripts/                    # Your project scripts
+│   └── Gen/                   # Generated code (auto-created)
 └── Resources/                 # Resource files
     └── GlobalConfig.asset     # Global configuration
 ```
 
-## ⚙️ Configuration
+## Configuration
 
 ### Global Settings
 
@@ -141,66 +160,80 @@ Configure code generation path in `Resources/GlobalConfig.asset`:
 
 ### Code Generation Rules
 
-- Generated file naming: `{className}Gen.cs`
-- Uses partial class pattern, won't overwrite your main code
-- Component property naming: `{NodeName}_{ComponentType}`
-- Auto-adds XML documentation comments
+- **Generated file naming:** `{className}Gen.cs`
+- **Uses partial class pattern** - won't overwrite your main code
+- **Component property naming:** `{NodeName}_{ComponentType}`
 
-## 🎨 Interface Guide
+## Interface Features
 
-### Hierarchy Window Enhancement
+### Enhanced Hierarchy Window
 
-- **Background Color** - Different colors for different AutoUIBinderBase types
-- **Component Icons** - Shows icons for all components
-- **Binding Status** - Special indicators for bound components
-- **Smart Interaction** - Click icons to bind/unbind
+- **Background Color Coding** - Different colors for different AutoUIBinderBase types
+- **Component Icons** - Visual indicators for all UI components
+- **Binding Status** - Special highlighting for bound components
+- **Interactive Binding** - Click icons to bind/unbind instantly
 
-### Inspector Enhancement
+### Improved Inspector Panel
 
-- **Component Reference List** - Shows all bound components in table format
-- **One-Click Generation** - Prominent "Generate UI" button
-- **Real-time Validation** - Automatically detects invalid references
+- **Component Reference Table** - Clean overview of all bound components
+- **One-Click Generation** - Prominent "Generate UI Code" button
+- **Real-time Validation** - Automatically detects and reports invalid references
+- **Binding Statistics** - Shows bound/total component counts
 
-## 🔧 Advanced Features
+![Inspector Interface](docs/images/Inspector.png)
 
-### Smart Naming
+## Advanced Features
 
-The tool automatically handles:
+### Smart Naming System
+
+AutoUIBinder intelligently handles:
 
 - **Duplicate Detection** - Auto-adds numeric suffixes for duplicate names
-- **Invalid Characters** - Auto-replaces spaces with underscores
-- **Keyword Conflicts** - Avoids using C# keywords as variable names
-- **User Confirmation** - Shows confirmation dialog for duplicates
+- **Invalid Characters** - Auto-replaces spaces and special characters
+- **C# Keyword Conflicts** - Avoids using reserved keywords as variable names
+- **User Confirmation** - Interactive dialogs for naming conflicts
 
-### Performance Features
+### Performance Optimizations
 
-- **On-Demand Redraw** - Only refreshes Hierarchy window when necessary
-- **Smart Caching** - Caches colors and states
-- **Event-Driven** - Based on Unity event system, responsive
+- **Event-Driven Architecture** - Responsive to Unity's event system
+- **Memory Efficient** - Minimal runtime overhead
 
-### Error Handling
+### Robust Error Handling
 
-- **Friendly Tips** - All errors have detailed Chinese messages
-- **File Backup** - Auto-creates backup before overwriting
-- **Exception Recovery** - Auto-recovers binding state after editor restart
+- **Graceful Recovery** - Auto-recovers binding state after editor restart
+- **Validation Checks** - Prevents common binding errors before they occur
+- **User-Friendly Messages** - Clear, actionable error descriptions
 
-## 🤝 Contributing
+## Best Practices
 
-**We welcome community contributions**
-- 🐛 Report bugs and suggest features
-- 📝 Improve documentation
-- 🔧 Submit pull requests
-- ⭐ Star the project to show your support
+### Component Organization
+- Keep UI hierarchies clean and organized
+- Use empty GameObjects as containers for logical grouping
+- Name GameObjects consistently across different panels
 
-## 📄 License
+### Code Structure
+- Keep your main UI class focused on game logic
+- Use the generated partial class for component references
+- Leverage event binding for clean separation of concerns
+
+## Contributing
+
+**We welcome community contributions!**
+
+- **Report Bugs** - Help us improve by reporting issues
+- **Suggest Features** - Share your ideas for new functionality
+- **Submit Pull Requests** - Contribute code improvements
+- **Star the Project** - Show your support and help others discover AutoUIBinder
+
+## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
 ---
 
 <p align="center">
-    <strong>⚡ AutoUIBinder - Making Unity UI Development a Breeze! ⚡</strong>
+    <strong>AutoUIBinder - Making Unity UI Development a Breeze!</strong>
 </p>
 <p align="center">
-    Made with ❤️ by the AutoUIBinder Team
+    Made with love by the AutoUIBinder Team
 </p>
