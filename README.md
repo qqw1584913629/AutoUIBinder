@@ -94,7 +94,7 @@ public class GamePanel : AutoUIBinderBase
 
 ### Visual Component Binding
 <p align="center">
-![Visual Component Binding](docs/images/UIComponentNodeBind.gif)
+<img src="docs/images/UIComponentNodeBind.gif" alt="Visual Component Binding" />
 </p>
 <p>
 Click component icons in Hierarchy to bind them instantly - see the visual feedback in real-time!
@@ -103,14 +103,14 @@ Click component icons in Hierarchy to bind them instantly - see the visual feedb
 > Generated Code:
 
 <p align="center">
-![Generated Code](docs/images/ExampleUIPanelGen.png)
+<img src="docs/images/ExampleUIPanelGen.png" alt="Generated Code" />
 </p>
 <p>
 Comprehensive component references and bindings generated automatically
 </p>
 
 <p align="center">
-![Generated Code](docs/images/GetUIComponent.png)
+<img src="docs/images/GetUIComponent.png" alt="Generated Code" />
 </p>
 <p>
 Component instances retrieved via dictionary, maintaining O(1) efficiency
@@ -118,7 +118,7 @@ Component instances retrieved via dictionary, maintaining O(1) efficiency
 
 ### Automatic Event Binding
 <p align="center">
-![Event Binding](docs/images/UIComponentEventBind.gif)
+<img src="docs/images/UIComponentEventBind.gif" alt="Event Binding" />
 </p>
 <p>
 AutoUIBinder automatically connects UI events to your methods based on naming conventions
@@ -127,7 +127,7 @@ AutoUIBinder automatically connects UI events to your methods based on naming co
 > Generated Code:
 
 <p align="center">
-![Original Script](docs/images/ExampleUIPanel.png)
+<img src="docs/images/ExampleUIPanel.png" alt="Original Script" />
 </p>
 <p>
 Simple, clean code focused on your game logic
@@ -197,7 +197,7 @@ Configure code generation path in `Resources/GlobalConfig.asset`:
 - **Binding Statistics** - Shows bound/total component counts
 
 <p align="center">
-![Inspector Interface](docs/images/Inspector.png)
+<img src="docs/images/Inspector.png" alt="Inspector Interface" />
 </p>
 
 ## Advanced Features
