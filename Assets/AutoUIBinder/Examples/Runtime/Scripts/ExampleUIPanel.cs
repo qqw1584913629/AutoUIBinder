@@ -7,21 +7,28 @@ using AutoUIBinder;
 /// </summary>
 public partial class ExampleUIPanel : AutoUIBinderBase
 {
+    //lobby panel prefab
+    public GameObject LobbyPanelPrefab;
     public void Start()
     {
     }
 
+
+
     [UIEvent("Button_Close_Button", "onClick")]
     private void OnButton_Close_ButtononClick()
     {
-        Debug.Log("[ExampleUIPanel] Close button clicked!");
+        gameObject.SetActive(false);
     }
 
-    [UIEvent("InputField_Legacy_InputField", "onSubmit")]
-    private void OnInputField_Legacy_InputFieldonSubmit(string value)
+    [UIEvent("LoginButton_Button", "onClick")]
+    private void OnLoginButton_ButtononClick()
     {
-        Debug.LogError(value);
+        Debug.Log($"login account: {Account_InputField.text}");
+        Debug.Log($"login password: {Password_InputField.text}");
+
+        //TODO 这里要根据自己的项目UI框架来实现
+        Instantiate(LobbyPanelPrefab, transform.parent);
+        gameObject.SetActive(false);
     }
-
-
 }

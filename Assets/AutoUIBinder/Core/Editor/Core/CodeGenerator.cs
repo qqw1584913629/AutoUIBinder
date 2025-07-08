@@ -446,8 +446,7 @@ namespace AutoUIBinder.Editor
                 if (kvp.Value != null)
                 {
                     string componentTypeName = kvp.Value.GetType().Name;
-                    string propertyName = $"{kvp.Key}_{componentTypeName}";
-                    
+                    string propertyName = kvp.Key;
                     codeBuilder.AppendLine($"    /// <summary>");
                     codeBuilder.AppendLine($"    /// 获取{componentTypeName}组件: {propertyName}");
                     codeBuilder.AppendLine($"    /// </summary>");
