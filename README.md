@@ -93,30 +93,42 @@ public class GamePanel : AutoUIBinderBase
 ## Visual Demonstration
 
 ### Visual Component Binding
+<p align="center">
 ![Visual Component Binding](docs/images/UIComponentNodeBind.gif)
+</p>
 <p>
 Click component icons in Hierarchy to bind them instantly - see the visual feedback in real-time!
 </p>
 
-**Generated Code:**
+> Generated Code:
+
+<p align="center">
 ![Generated Code](docs/images/ExampleUIPanelGen.png)
+</p>
 <p>
 Comprehensive component references and bindings generated automatically
 </p>
 
+<p align="center">
 ![Generated Code](docs/images/GetUIComponent.png)
+</p>
 <p>
 Component instances retrieved via dictionary, maintaining O(1) efficiency
 </p>
 
 ### Automatic Event Binding
+<p align="center">
 ![Event Binding](docs/images/UIComponentEventBind.gif)
+</p>
 <p>
 AutoUIBinder automatically connects UI events to your methods based on naming conventions
 </p>
 
-**Generated Code:**
+> Generated Code:
+
+<p align="center">
 ![Original Script](docs/images/ExampleUIPanel.png)
+</p>
 <p>
 Simple, clean code focused on your game logic
 </p>
@@ -184,7 +196,9 @@ Configure code generation path in `Resources/GlobalConfig.asset`:
 - **Real-time Validation** - Automatically detects and reports invalid references
 - **Binding Statistics** - Shows bound/total component counts
 
+<p align="center">
 ![Inspector Interface](docs/images/Inspector.png)
+</p>
 
 ## Advanced Features
 

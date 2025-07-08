@@ -98,7 +98,8 @@ public class GamePanel : AutoUIBinderBase
 点击Hierarchy中的组件图标即可瞬间绑定 - 实时视觉反馈让绑定过程一目了然！
 </p>
 
-**自动生成的代码：**
+> 自动生成的代码：
+
 ![生成的代码](docs/images/ExampleUIPanelGen.png)
 <p>
 全面的组件引用和绑定代码，自动生成无需手写
@@ -115,7 +116,9 @@ public class GamePanel : AutoUIBinderBase
 AutoUIBinder根据命名约定自动将UI事件连接到你的方法
 </p>
 
-**自动生成的代码：**
+
+> 自动生成的代码：
+
 ![原始脚本](docs/images/ExampleUIPanel.png)
 <p>
 简洁明了的代码，专注于游戏逻辑
