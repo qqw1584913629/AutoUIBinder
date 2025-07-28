@@ -9,31 +9,10 @@ using AutoUIBinder;
 namespace AutoUIBinder.Editor
 {
     /// <summary>
-    /// 代码生成器 - 负责事件方法和UI代码生成
+    /// 代码生成器 - 负责UI组件属性代码生成
     /// </summary>
     public class CodeGenerator
     {
-        /// <summary>
-        /// 生成选中的事件方法
-        /// </summary>
-        public int GenerateSelectedEvents(AutoUIBinderBase target, List<UIEventManager.EventBinding> selectedEvents)
-        {
-            var eventsToGenerate = selectedEvents.Where(e => e.IsSelected && !e.AlreadyExists).ToList();
-            
-            if (eventsToGenerate.Count == 0)
-            {
-                return 0;
-            }
-            
-            int generated = 0;
-            foreach (var evt in eventsToGenerate)
-            {
-                AddEventHandlerToOriginalClass(target, evt.ComponentName, evt.EventName, evt.MethodName, evt.ParameterType);
-                generated++;
-            }
-            
-            return generated;
-        }
         
         /// <summary>
         /// 生成UI代码
@@ -45,17 +24,10 @@ namespace AutoUIBinder.Editor
             
             try
             {
-                // 1. 清理无效的事件方法
-                int cleanedCount = CleanupInvalidEventMethods(target);
-                if (cleanedCount > 0)
-                {
-                    Debug.Log($"[AutoUIBinder] 清理了 {cleanedCount} 个无效的事件方法");
-                }
-                
-                // 2. 确保目标类是partial类
+                // 1. 确保目标类是partial类
                 EnsurePartialClass(target);
                 
-                // 3. 获取生成路径配置
+                // 2. 获取生成路径配置
                 var globalConfig = Resources.Load<UIPathConfig>("GlobalConfig");
                 if (globalConfig == null)
                 {
@@ -63,7 +35,7 @@ namespace AutoUIBinder.Editor
                     return;
                 }
                 
-                // 4. 创建生成目录
+                // 3. 创建生成目录
                 string genFolderPath = System.IO.Path.Combine(globalConfig.Paths, "Gen");
                 string classGenFolderPath = System.IO.Path.Combine(genFolderPath, className);
                 
@@ -72,13 +44,13 @@ namespace AutoUIBinder.Editor
                     System.IO.Directory.CreateDirectory(classGenFolderPath);
                 }
                 
-                // 5. 生成代码文件
+                // 4. 生成代码文件
                 string genFilePath = System.IO.Path.Combine(classGenFolderPath, $"{className}Gen.cs");
                 string absoluteFilePath = System.IO.Path.GetFullPath(genFilePath);
                 
                 GenerateUICodeFile(target, absoluteFilePath);
                 
-                // 6. 刷新资源
+                // 5. 刷新资源
                 AssetDatabase.Refresh();
                 
                 Debug.Log($"[AutoUIBinder] UI代码生成完成: {genFilePath}");
@@ -90,294 +62,12 @@ namespace AutoUIBinder.Editor
             }
         }
         
-        /// <summary>
-        /// 清空指定组件的事件方法
-        /// </summary>
-        public int ClearComponentEventMethods(AutoUIBinderBase target, string componentName)
-        {
-            var script = MonoScript.FromMonoBehaviour(target as MonoBehaviour);
-            var path = AssetDatabase.GetAssetPath(script);
-            
-            var lines = File.ReadAllLines(path);
-            var newLines = new List<string>();
-            
-            bool skipMethod = false;
-            int methodBraceCount = 0;
-            int removedCount = 0;
-            
-            for (int i = 0; i < lines.Length; i++)
-            {
-                string line = lines[i];
-                string trimmedLine = line.Trim();
-                
-                if (trimmedLine.StartsWith("[UIEvent"))
-                {
-                    // 检查是否是指定组件的事件
-                    if (trimmedLine.Contains($"\"{componentName}\""))
-                    {
-                        skipMethod = true;
-                        methodBraceCount = 0;
-                        removedCount++;
-                        continue;
-                    }
-                }
-                
-                if (skipMethod)
-                {
-                    foreach (char c in trimmedLine)
-                    {
-                        if (c == '{') methodBraceCount++;
-                        else if (c == '}') methodBraceCount--;
-                    }
-                    
-                    if (methodBraceCount <= 0 && trimmedLine.Contains("}"))
-                    {
-                        skipMethod = false;
-                        continue;
-                    }
-                    
-                    continue;
-                }
-                
-                newLines.Add(line);
-            }
-            
-            File.WriteAllLines(path, newLines);
-            AssetDatabase.Refresh();
-            
-            Debug.Log($"[AutoUIBinder] 已删除组件 '{componentName}' 的 {removedCount} 个事件方法");
-            return removedCount;
-        }
-        
-        /// <summary>
-        /// 清空所有事件方法
-        /// </summary>
-        public int ClearAllEventMethods(AutoUIBinderBase target)
-        {
-            var script = MonoScript.FromMonoBehaviour(target as MonoBehaviour);
-            var path = AssetDatabase.GetAssetPath(script);
-            
-            var lines = File.ReadAllLines(path);
-            var newLines = new List<string>();
-            
-            bool skipMethod = false;
-            int methodBraceCount = 0;
-            int removedCount = 0;
-            
-            for (int i = 0; i < lines.Length; i++)
-            {
-                string line = lines[i];
-                string trimmedLine = line.Trim();
-                
-                if (trimmedLine.StartsWith("[UIEvent"))
-                {
-                    skipMethod = true;
-                    methodBraceCount = 0;
-                    removedCount++;
-                    continue;
-                }
-                
-                if (skipMethod)
-                {
-                    foreach (char c in trimmedLine)
-                    {
-                        if (c == '{') methodBraceCount++;
-                        else if (c == '}') methodBraceCount--;
-                    }
-                    
-                    if (methodBraceCount <= 0 && trimmedLine.Contains("}"))
-                    {
-                        skipMethod = false;
-                        continue;
-                    }
-                    
-                    continue;
-                }
-                
-                newLines.Add(line);
-            }
-            
-            File.WriteAllLines(path, newLines);
-            AssetDatabase.Refresh();
-            
-            return removedCount;
-        }
-        
-        /// <summary>
-        /// 清理无效的事件方法（组件已解绑但方法还存在）
-        /// </summary>
-        public int CleanupInvalidEventMethods(AutoUIBinderBase target)
-        {
-            try
-            {
-                var script = MonoScript.FromMonoBehaviour(target as MonoBehaviour);
-                var path = AssetDatabase.GetAssetPath(script);
-                
-                if (string.IsNullOrEmpty(path) || !File.Exists(path))
-                {
-                    Debug.LogWarning("[AutoUIBinder] 无法找到脚本文件");
-                    return 0;
-                }
-                
-                var lines = File.ReadAllLines(path);
-                var newLines = new List<string>();
-                var currentBindings = GetCurrentComponentBindings(target);
-                
-                bool skipMethod = false;
-                int methodBraceCount = 0;
-                int removedCount = 0;
-                string currentEventComponentName = "";
-                
-                for (int i = 0; i < lines.Length; i++)
-                {
-                    string line = lines[i];
-                    string trimmedLine = line.Trim();
-                    
-                    // 检查是否是UIEvent特性
-                    if (trimmedLine.StartsWith("[UIEvent"))
-                    {
-                        // 解析UIEvent特性中的组件名称
-                        currentEventComponentName = ExtractComponentNameFromUIEvent(trimmedLine);
-                        Debug.Log($"[AutoUIBinder] 检查事件方法，组件名: '{currentEventComponentName}'");
-                        
-                        // 检查该组件是否还存在绑定
-                        if (!string.IsNullOrEmpty(currentEventComponentName) && !currentBindings.Contains(currentEventComponentName))
-                        {
-                            skipMethod = true;
-                            methodBraceCount = 0;
-                            removedCount++;
-                            Debug.Log($"[AutoUIBinder] 发现无效事件方法，组件 '{currentEventComponentName}' 已解绑，将被清理");
-                            continue;
-                        }
-                        else
-                        {
-                            Debug.Log($"[AutoUIBinder] 事件方法有效，组件 '{currentEventComponentName}' 仍然绑定");
-                        }
-                    }
-                    
-                    if (skipMethod)
-                    {
-                        // 计算大括号数量来确定方法结束位置
-                        foreach (char c in trimmedLine)
-                        {
-                            if (c == '{') methodBraceCount++;
-                            else if (c == '}') methodBraceCount--;
-                        }
-                        
-                        // 如果方法结束，停止跳过
-                        if (methodBraceCount <= 0 && trimmedLine.Contains("}"))
-                        {
-                            skipMethod = false;
-                            continue;
-                        }
-                        
-                        continue;
-                    }
-                    
-                    newLines.Add(line);
-                }
-                
-                // 只有在实际移除了方法时才写入文件
-                if (removedCount > 0)
-                {
-                    File.WriteAllLines(path, newLines);
-                    AssetDatabase.Refresh();
-                    Debug.Log($"[AutoUIBinder] 已清理 {removedCount} 个无效的事件方法");
-                }
-                
-                return removedCount;
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"[AutoUIBinder] 清理无效事件方法时发生错误: {ex.Message}");
-                return 0;
-            }
-        }
-        
-        /// <summary>
-        /// 获取当前组件绑定的名称列表
-        /// </summary>
-        private HashSet<string> GetCurrentComponentBindings(AutoUIBinderBase target)
-        {
-            var bindings = new HashSet<string>();
-            
-            foreach (var kvp in target.ComponentRefs)
-            {
-                if (kvp.Value != null)
-                {
-                    // 直接使用Key作为组件名称，因为Key就是UIEvent中使用的组件名
-                    bindings.Add(kvp.Key);
-                    Debug.Log($"[AutoUIBinder] 当前绑定的组件: {kvp.Key}");
-                }
-            }
-            
-            return bindings;
-        }
-        
-        /// <summary>
-        /// 从UIEvent特性字符串中提取组件名称
-        /// </summary>
-        private string ExtractComponentNameFromUIEvent(string uiEventLine)
-        {
-            try
-            {
-                // UIEvent特性格式: [UIEvent("ComponentName", "EventName")]
-                int firstQuote = uiEventLine.IndexOf('"');
-                if (firstQuote == -1) return "";
-                
-                int secondQuote = uiEventLine.IndexOf('"', firstQuote + 1);
-                if (secondQuote == -1) return "";
-                
-                return uiEventLine.Substring(firstQuote + 1, secondQuote - firstQuote - 1);
-            }
-            catch
-            {
-                return "";
-            }
-        }
         
         
-        private void AddEventHandlerToOriginalClass(AutoUIBinderBase target, string componentName, string eventName, string methodName, System.Type parameterType)
-        {
-            var script = MonoScript.FromMonoBehaviour(target as MonoBehaviour);
-            var path = AssetDatabase.GetAssetPath(script);
-            
-            var lines = File.ReadAllLines(path);
-            var insertIndex = lines.Length - 1;
-            
-            for (int i = lines.Length - 1; i >= 0; i--)
-            {
-                if (lines[i].Trim() == "}")
-                {
-                    insertIndex = i;
-                    break;
-                }
-            }
-
-            var newMethod = new StringBuilder();
-            newMethod.AppendLine();
-            newMethod.AppendLine($"    [UIEvent(\"{componentName}\", \"{eventName}\")]");
-            
-            if (parameterType != null)
-            {
-                newMethod.AppendLine($"    private void {methodName}({GetFriendlyTypeName(parameterType)} value)");
-            }
-            else
-            {
-                newMethod.AppendLine($"    private void {methodName}()");
-            }
-            
-            newMethod.AppendLine("    {");
-            newMethod.AppendLine("        ");
-            newMethod.Append("    }");
-
-            var newLines = lines.ToList();
-            newLines.Insert(insertIndex, newMethod.ToString());
-            
-            File.WriteAllLines(path, newLines);
-            AssetDatabase.Refresh();
-            Debug.Log($"[AutoUIBinder] 已在原始类文件中生成事件方法: {methodName}");
-        }
+        
+        
+        
+        
         
         /// <summary>
         /// 确保目标类是partial类

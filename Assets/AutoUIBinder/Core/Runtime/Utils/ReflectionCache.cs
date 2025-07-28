@@ -19,9 +19,6 @@ namespace AutoUIBinder
         // 类型的字段缓存
         private static readonly Dictionary<Type, FieldInfo[]> _fieldCache = new Dictionary<Type, FieldInfo[]>();
         
-        // 带UIEventAttribute的方法缓存
-        private static readonly Dictionary<Type, MethodInfo[]> _eventMethodCache = new Dictionary<Type, MethodInfo[]>();
-        
         // UnityEvent字段缓存
         private static readonly Dictionary<Type, FieldInfo[]> _unityEventFieldCache = new Dictionary<Type, FieldInfo[]>();
         
@@ -61,29 +58,6 @@ namespace AutoUIBinder
             return fields;
         }
 
-        /// <summary>
-        /// 获取带UIEventAttribute的方法（带缓存）
-        /// </summary>
-        public static MethodInfo[] GetEventMethods(Type type)
-        {
-            if (!_eventMethodCache.TryGetValue(type, out var eventMethods))
-            {
-                var allMethods = GetMethods(type);
-                var eventMethodList = new List<MethodInfo>();
-                
-                foreach (var method in allMethods)
-                {
-                    if (method.GetCustomAttribute<UIEventAttribute>() != null)
-                    {
-                        eventMethodList.Add(method);
-                    }
-                }
-                
-                eventMethods = eventMethodList.ToArray();
-                _eventMethodCache[type] = eventMethods;
-            }
-            return eventMethods;
-        }
 
         /// <summary>
         /// 获取类型的UnityEvent字段（带缓存）
@@ -213,22 +187,6 @@ namespace AutoUIBinder
             return method.GetCustomAttribute<T>() != null;
         }
 
-        /// <summary>
-        /// 检查方法是否为事件绑定方法
-        /// </summary>
-        public static bool IsEventMethod(MethodInfo method, string componentName, string eventName)
-        {
-            var attr = method.GetCustomAttribute<UIEventAttribute>();
-            return attr != null && attr.ComponentName == componentName && attr.EventType == eventName;
-        }
-
-        /// <summary>
-        /// 检查方法名称是否匹配
-        /// </summary>
-        public static bool IsMethodNameMatch(MethodInfo method, string methodName)
-        {
-            return method.Name == methodName && method.GetCustomAttribute<UIEventAttribute>() != null;
-        }
 
         #endregion
 
@@ -241,7 +199,6 @@ namespace AutoUIBinder
         {
             _methodCache.Clear();
             _fieldCache.Clear();
-            _eventMethodCache.Clear();
             _unityEventFieldCache.Clear();
             _friendlyNameCache.Clear();
             _methodParameterCache.Clear();
@@ -256,7 +213,6 @@ namespace AutoUIBinder
         {
             _methodCache.Remove(type);
             _fieldCache.Remove(type);
-            _eventMethodCache.Remove(type);
             _unityEventFieldCache.Remove(type);
             _friendlyNameCache.Remove(type);
             
@@ -282,7 +238,6 @@ namespace AutoUIBinder
         {
             return $"方法缓存: {_methodCache.Count}, " +
                    $"字段缓存: {_fieldCache.Count}, " +
-                   $"事件方法缓存: {_eventMethodCache.Count}, " +
                    $"事件字段缓存: {_unityEventFieldCache.Count}, " +
                    $"类型名称缓存: {_friendlyNameCache.Count}, " +
                    $"方法参数缓存: {_methodParameterCache.Count}";

@@ -11,18 +11,15 @@ public partial class ExampleUIPanel : AutoUIBinderBase
     public GameObject LobbyPanelPrefab;
     public void Start()
     {
+        Button_Close_Button.onClick.AddListener(OnButton_Close_ButtonOnClick);
+        LoginButton_Button.onClick.AddListener(OnLoginButton_ButtonOnClick);
     }
-
-
-
-    [UIEvent("Button_Close_Button", "onClick")]
-    private void OnButton_Close_ButtononClick()
+    private void OnButton_Close_ButtonOnClick()
     {
         gameObject.SetActive(false);
     }
 
-    [UIEvent("LoginButton_Button", "onClick")]
-    private void OnLoginButton_ButtononClick()
+    private void OnLoginButton_ButtonOnClick()
     {
         Debug.Log($"login account: {Account_InputField.text}");
         Debug.Log($"login password: {Password_InputField.text}");

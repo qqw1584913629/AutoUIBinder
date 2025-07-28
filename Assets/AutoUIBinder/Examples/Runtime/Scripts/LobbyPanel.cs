@@ -7,8 +7,12 @@ public partial class LobbyPanel : AutoUIBinderBase
 {
     //load panel prefab
     public GameObject LoadPanelPrefab;
-    [UIEvent("Button_Button", "onClick")]
-    private void OnButton_ButtononClick()
+
+    void Start()
+    {
+        Button_Button.onClick.AddListener(OnButton_ButtonOnClick);
+    }
+    private void OnButton_ButtonOnClick()
     {
         Instantiate(LoadPanelPrefab, transform.parent);
         gameObject.SetActive(false);

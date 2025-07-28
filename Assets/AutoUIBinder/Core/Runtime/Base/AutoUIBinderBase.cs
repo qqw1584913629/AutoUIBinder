@@ -17,8 +17,7 @@ namespace AutoUIBinder
 
         protected virtual void Awake()
         {
-            // 自动绑定所有事件
-            UIEventBinder.BindEvents(this);
+            // UI组件绑定基类，子类可以重写此方法添加初始化逻辑
         }
 
         public void AddComponentRef(string key, Component component)

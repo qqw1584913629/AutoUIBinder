@@ -70,26 +70,6 @@ void Start() {
 }
 ```
 
-## 事件绑定
-如果不想使用```Button_Play.onClick.AddListener(() => StartGame());```这种方式，可以使用工具提供的事件绑定。
-```csharp
-public class GamePanel : AutoUIBinderBase 
-{
-    [UIEvent("xxxxxxx", "xxxxx")]
-    private void OnStartButtonClick()
-    {
-        // 自动绑定到Button_Start的点击事件
-        StartGame();
-    }
-
-    [UIEvent("xxxxxxx", "xxxxxx")]
-    private void OnVolumeSliderChanged(float value)
-    {
-        // 自动绑定到Slider_Volume的值改变事件
-        AudioListener.volume = value;
-    }
-}
-```
 ## 实际效果演示
 
 ### 可视化组件绑定
@@ -116,23 +96,6 @@ public class GamePanel : AutoUIBinderBase
 组件实例通过字典获取，维持(O1)效率
 </p>
 
-### 自动事件绑定
-<p align="center">
-<img src="docs/images/UIComponentEventBind.gif" alt="事件绑定" />
-</p>
-<p>
-AutoUIBinder根据命名约定自动将UI事件连接到你的方法
-</p>
-
-
-> 自动生成的代码：
-
-<p align="center">
-<img src="docs/images/ExampleUIPanel.png" alt="原始脚本" />
-</p>
-<p>
-简洁明了的代码，专注于游戏逻辑
-</p>
 
 ## 用户界面
 
@@ -141,7 +104,6 @@ AutoUIBinder根据命名约定自动将UI事件连接到你的方法
 - **可视化绑定** - 点击Hierarchy中的组件图标即可瞬间绑定  
 - **一键生成** - 自动生成所有组件引用代码  
 - **智能命名** - 智能处理冲突和非法字符  
-- **事件绑定** - 自动连接UI事件到你的方法  
 - **零配置** - 开箱即用，无需复杂设置
 
 ## 项目结构
@@ -151,7 +113,7 @@ Assets/
 ├── AutoUIBinder/                # 核心工具
 │   ├── Core/                    # 核心实现
 │   │   ├── Runtime/            # 运行时代码
-│   │   │   ├── Attributes/     # 特性定义
+│   │   │   ├── Attributes/     # 自定义特性
 │   │   │   ├── Base/          # 基础类
 │   │   │   └── Utils/         # 工具类
 │   │   └── Editor/             # 编辑器代码
@@ -234,7 +196,7 @@ AutoUIBinder智能处理：
 ### 代码结构
 - 保持主UI类专注于游戏逻辑
 - 使用生成的partial类进行组件引用
-- 利用事件绑定实现关注点的清晰分离
+- 通过清晰的方法组织实现关注点分离
 
 ## 参与贡献
 

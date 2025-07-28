@@ -5,7 +5,6 @@ using UnityEngine;
 
 public partial class LoadPanel : AutoUIBinderBase
 {
-    [UIEvent("Slider_Slider", "onValueChanged")]
     private void OnSlider_SlideronValueChanged(float value)
     {
         Debug.Log($"场景加载进度: {value}");
@@ -17,6 +16,7 @@ public partial class LoadPanel : AutoUIBinderBase
     }
     void Start()
     {
+        Slider_Slider.onValueChanged.AddListener(OnSlider_SlideronValueChanged);
         StartCoroutine(LoadScene());
     }
     IEnumerator LoadScene()

@@ -70,26 +70,6 @@ void Start() {
 }
 ```
 
-## Event Binding
-If you don't want to use the ```Button_Play.onClick.AddListener(() => StartGame());``` approach, you can use the tool's event binding feature.
-```csharp
-public class GamePanel : AutoUIBinderBase 
-{
-    [UIEvent("xxxxxxx", "xxxxx")]
-    private void OnStartButtonClick()
-    {
-        // Automatically binds to Button_Start click event
-        StartGame();
-    }
-
-    [UIEvent("xxxxxxx", "xxxxxx")]
-    private void OnVolumeSliderChanged(float value)
-    {
-        // Automatically binds to Slider_Volume value change
-        AudioListener.volume = value;
-    }
-}
-```
 ## Visual Demonstration
 
 ### Visual Component Binding
@@ -116,22 +96,6 @@ Comprehensive component references and bindings generated automatically
 Component instances retrieved via dictionary, maintaining O(1) efficiency
 </p>
 
-### Automatic Event Binding
-<p align="center">
-<img src="docs/images/UIComponentEventBind.gif" alt="Event Binding" />
-</p>
-<p>
-AutoUIBinder automatically connects UI events to your methods based on naming conventions
-</p>
-
-> Generated Code:
-
-<p align="center">
-<img src="docs/images/ExampleUIPanel.png" alt="Original Script" />
-</p>
-<p>
-Simple, clean code focused on your game logic
-</p>
 
 ## User Interface
 
@@ -140,7 +104,6 @@ Simple, clean code focused on your game logic
 - **Visual Binding** - Click component icons in Hierarchy to bind instantly  
 - **One-Click Generation** - Generate all component references automatically  
 - **Smart Naming** - Handles conflicts and invalid characters intelligently  
-- **Event Binding** - Auto-connect UI events to your methods  
 - **Zero Configuration** - Works out of the box with sensible defaults
 
 ## Project Structure
@@ -150,7 +113,7 @@ Assets/
 ├── AutoUIBinder/                # Core tool
 │   ├── Core/                    # Core implementation
 │   │   ├── Runtime/            # Runtime code
-│   │   │   ├── Attributes/     # Attribute definitions
+│   │   │   ├── Attributes/     # Custom attributes
 │   │   │   ├── Base/          # Base classes
 │   │   │   └── Utils/         # Utility classes
 │   │   └── Editor/             # Editor code
@@ -232,7 +195,7 @@ AutoUIBinder intelligently handles:
 ### Code Structure
 - Keep your main UI class focused on game logic
 - Use the generated partial class for component references
-- Leverage event binding for clean separation of concerns
+- Organize methods clearly for clean separation of concerns
 
 ## Contributing
 
